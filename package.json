@@ -6,7 +6,8 @@
     "dev": "lsof -ti:3333 | xargs kill -9 2>/dev/null; next dev --port 3333",
     "build": "tsx src/scripts/generate-api.ts && tsx src/scripts/generate-drawio-libraries.ts && tsx src/scripts/generate-excalidraw-libraries.ts && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "tsx --test src/components/icons/shared/__tests__/*.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
