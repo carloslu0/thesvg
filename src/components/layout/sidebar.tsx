@@ -131,7 +131,7 @@ export function Sidebar({
                         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3 text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg>';
                         setTimeout(() => { btn.innerHTML = originalHTML; }, 1500);
                       }
-                    } catch(err) {}
+                    } catch(_err) {}
                   }
                 }}
                 title="Share Favorites"

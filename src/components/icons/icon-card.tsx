@@ -70,7 +70,7 @@ export const IconCard = memo(function IconCard({
         categories: icon.categories,
       });
     },
-    [icon.variants.default, icon.slug, icon.title, icon.categories, defaultCopyFormat]
+    [icon.variants.default, icon.slug, icon.title, icon.categories]
   );
 
   const handleDownload = useCallback(
@@ -98,7 +98,7 @@ export const IconCard = memo(function IconCard({
         categories: icon.categories,
       });
     },
-    [icon.variants.default, icon.slug, icon.title, icon.categories, defaultCopyFormat]
+    [icon.variants.default, icon.slug, icon.title, icon.categories]
   );
 
   const handleFavorite = useCallback(

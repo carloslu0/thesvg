@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
 
-import { esc, colorize, formatSvgCode } from "../syntax-highlight.tsx";
+import { esc, colorize, formatSvgCode } from "../syntax-highlight";
 
 test("esc escapes HTML characters", () => {
   assert.equal(esc("& < > \" '"), "&amp; &lt; &gt; &quot; &#39;");
