@@ -31,3 +31,6 @@ Simulating with N=5000 icons, M=20 slugs:
 * Fixed an O(N^2) issue in `google-2026-landing.tsx` where `.find()` was nested inside a `.map()`.
   * Reduced the lookup complexity from O(M) to O(1) by leveraging a map exported from `src/lib/color-bucket.ts` named `COLOR_BUCKETS_BY_ID`.
   * Re-benchmarking (1,000,000 iterations) resulted in roughly a ~3-5% perf improvement due to the small size of the arrays.
+
+### Date: 2025-03-09
+**Optimization:** Avoid allocating Set / map arrays in hot path loops, instead iterate directly over origin arrays. Add fast-path checks (e.g., `str.length === 4`) before executing regular expressions (e.g., `/^\d{4}$/`) in iterations to save significant CPU cycles.

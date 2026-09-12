@@ -43,15 +43,17 @@ export function IconPageClient({ slug }: { slug: string }) {
         // Scan the full icon list for any slug-YYYY counterpart rather than
         // assuming a fixed year window, so newly-bundled refresh icons are
         // always picked up regardless of the build year.
-        const allSlugs = new Set(getAllIcons().map((i) => i.slug));
+        const allIcons = getAllIcons();
         const prefix = `${icon.slug}-`;
         let latest: { slug: string; year: number } | null = null;
-        for (const s of allSlugs) {
+        for (const i of allIcons) {
+          const s = i.slug;
           if (!s.startsWith(prefix)) continue;
           const yearStr = s.slice(prefix.length);
-          if (!/^\d{4}$/.test(yearStr)) continue;
-          const year = parseInt(yearStr, 10);
-          if (!latest || year > latest.year) latest = { slug: s, year };
+          if (yearStr.length === 4 && /^\d{4}$/.test(yearStr)) {
+            const year = parseInt(yearStr, 10);
+            if (!latest || year > latest.year) latest = { slug: s, year };
+          }
         }
         if (latest) {
           return {
