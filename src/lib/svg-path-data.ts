@@ -88,98 +88,6 @@ export function parsePathSubpaths(d: string): RawSubpath[] {
     scanner.hasMore();
   };
 
-  const flattenCubic = (p0: PathPoint, p1: PathPoint, p2: PathPoint, p3: PathPoint) => {
-    const segments = 8;
-    for (let t = 1; t <= segments; t++) {
-      const u = t / segments;
-      const mu = 1 - u;
-      const x =
-        mu * mu * mu * p0.x + 3 * mu * mu * u * p1.x + 3 * mu * u * u * p2.x + u * u * u * p3.x;
-      const y =
-        mu * mu * mu * p0.y + 3 * mu * mu * u * p1.y + 3 * mu * u * u * p2.y + u * u * u * p3.y;
-      current.push({ x, y });
-    }
-  };
-
-  const flattenQuad = (p0: PathPoint, p1: PathPoint, p2: PathPoint) => {
-    const segments = 6;
-    for (let t = 1; t <= segments; t++) {
-      const u = t / segments;
-      const mu = 1 - u;
-      const x = mu * mu * p0.x + 2 * mu * u * p1.x + u * u * p2.x;
-      const y = mu * mu * p0.y + 2 * mu * u * p1.y + u * u * p2.y;
-      current.push({ x, y });
-    }
-  };
-
-  const flattenArc = (
-    p0: PathPoint,
-    rxIn: number,
-    ryIn: number,
-    xAxisRotationDeg: number,
-    largeArcFlag: number,
-    sweepFlag: number,
-    p1: PathPoint,
-  ) => {
-    if (rxIn === 0 || ryIn === 0) {
-      current.push({ ...p1 });
-      return;
-    }
-    let rx = Math.abs(rxIn);
-    let ry = Math.abs(ryIn);
-    const phi = (xAxisRotationDeg * Math.PI) / 180;
-    const cosPhi = Math.cos(phi);
-    const sinPhi = Math.sin(phi);
-
-    const dx2 = (p0.x - p1.x) / 2;
-    const dy2 = (p0.y - p1.y) / 2;
-    const x1p = cosPhi * dx2 + sinPhi * dy2;
-    const y1p = -sinPhi * dx2 + cosPhi * dy2;
-
-    const lambda = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
-    if (lambda > 1) {
-      const s = Math.sqrt(lambda);
-      rx *= s;
-      ry *= s;
-    }
-
-    const sign = largeArcFlag !== sweepFlag ? 1 : -1;
-    const num = rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p;
-    const den = rx * rx * y1p * y1p + ry * ry * x1p * x1p;
-    const coef = sign * Math.sqrt(Math.max(num / den, 0));
-    const cxp = (coef * (rx * y1p)) / ry;
-    const cyp = (coef * -(ry * x1p)) / rx;
-
-    const cx = cosPhi * cxp - sinPhi * cyp + (p0.x + p1.x) / 2;
-    const cy = sinPhi * cxp + cosPhi * cyp + (p0.y + p1.y) / 2;
-
-    const angle = (ux: number, uy: number, vx: number, vy: number) => {
-      const dot = ux * vx + uy * vy;
-      const len = Math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy));
-      let a = Math.acos(Math.min(1, Math.max(-1, dot / len)));
-      if (ux * vy - uy * vx < 0) a = -a;
-      return a;
-    };
-
-    const theta1 = angle(1, 0, (x1p - cxp) / rx, (y1p - cyp) / ry);
-    let dTheta = angle(
-      (x1p - cxp) / rx,
-      (y1p - cyp) / ry,
-      (-x1p - cxp) / rx,
-      (-y1p - cyp) / ry,
-    );
-    if (!sweepFlag && dTheta > 0) dTheta -= 2 * Math.PI;
-    if (sweepFlag && dTheta < 0) dTheta += 2 * Math.PI;
-
-    const steps = Math.max(4, Math.ceil((Math.abs(dTheta) / Math.PI) * 10));
-    for (let s = 1; s <= steps; s++) {
-      const t = theta1 + (dTheta * s) / steps;
-      const x = cx + rx * Math.cos(t) * cosPhi - ry * Math.sin(t) * sinPhi;
-      const y = cy + rx * Math.cos(t) * sinPhi + ry * Math.sin(t) * cosPhi;
-      current.push({ x, y });
-    }
-  };
-
   parseLoop: while (scanner.hasMore()) {
     if (scanner.peekIsCommand()) {
       lastCmd = scanner.readCommand();
@@ -268,7 +176,7 @@ export function parsePathSubpaths(d: string): RawSubpath[] {
         const p1 = { x: x1, y: y1 };
         const p2 = { x: x2, y: y2 };
         const p3 = { x, y };
-        flattenCubic(cur, p1, p2, p3);
+        flattenCubic(cur, p1, p2, p3, current);
         lastCubicCtrl = p2;
         lastQuadCtrl = null;
         cur = p3;
@@ -285,7 +193,7 @@ export function parsePathSubpaths(d: string): RawSubpath[] {
         const p1 = { x: x1, y: y1 };
         const p2 = { x: x2, y: y2 };
         const p3 = { x, y };
-        flattenCubic(cur, p1, p2, p3);
+        flattenCubic(cur, p1, p2, p3, current);
         lastCubicCtrl = p2;
         lastQuadCtrl = null;
         cur = p3;
@@ -302,7 +210,7 @@ export function parsePathSubpaths(d: string): RawSubpath[] {
           : { ...cur };
         const p2 = { x: x2, y: y2 };
         const p3 = { x, y };
-        flattenCubic(cur, p1, p2, p3);
+        flattenCubic(cur, p1, p2, p3, current);
         lastCubicCtrl = p2;
         lastQuadCtrl = null;
         cur = p3;
@@ -319,7 +227,7 @@ export function parsePathSubpaths(d: string): RawSubpath[] {
           : { ...cur };
         const p2 = { x: x2, y: y2 };
         const p3 = { x, y };
-        flattenCubic(cur, p1, p2, p3);
+        flattenCubic(cur, p1, p2, p3, current);
         lastCubicCtrl = p2;
         lastQuadCtrl = null;
         cur = p3;
@@ -333,7 +241,7 @@ export function parsePathSubpaths(d: string): RawSubpath[] {
         const y = consume();
         const p1 = { x: x1, y: y1 };
         const p2 = { x, y };
-        flattenQuad(cur, p1, p2);
+        flattenQuad(cur, p1, p2, current);
         lastQuadCtrl = p1;
         lastCubicCtrl = null;
         cur = p2;
@@ -347,7 +255,7 @@ export function parsePathSubpaths(d: string): RawSubpath[] {
         const y = cur.y + consume();
         const p1 = { x: x1, y: y1 };
         const p2 = { x, y };
-        flattenQuad(cur, p1, p2);
+        flattenQuad(cur, p1, p2, current);
         lastQuadCtrl = p1;
         lastCubicCtrl = null;
         cur = p2;
@@ -361,7 +269,7 @@ export function parsePathSubpaths(d: string): RawSubpath[] {
           ? { x: 2 * cur.x - lastQuadCtrl.x, y: 2 * cur.y - lastQuadCtrl.y }
           : { ...cur };
         const p2 = { x, y };
-        flattenQuad(cur, p1, p2);
+        flattenQuad(cur, p1, p2, current);
         lastQuadCtrl = p1;
         lastCubicCtrl = null;
         cur = p2;
@@ -375,7 +283,7 @@ export function parsePathSubpaths(d: string): RawSubpath[] {
           ? { x: 2 * cur.x - lastQuadCtrl.x, y: 2 * cur.y - lastQuadCtrl.y }
           : { ...cur };
         const p2 = { x, y };
-        flattenQuad(cur, p1, p2);
+        flattenQuad(cur, p1, p2, current);
         lastQuadCtrl = p1;
         lastCubicCtrl = null;
         cur = p2;
@@ -391,7 +299,7 @@ export function parsePathSubpaths(d: string): RawSubpath[] {
         const x = consume();
         const y = consume();
         const p1 = { x, y };
-        flattenArc(cur, rx, ry, rot, laf, sf, p1);
+        flattenArc(cur, rx, ry, rot, laf, sf, p1, current);
         cur = p1;
         lastCubicCtrl = null;
         lastQuadCtrl = null;
@@ -407,7 +315,7 @@ export function parsePathSubpaths(d: string): RawSubpath[] {
         const x = cur.x + consume();
         const y = cur.y + consume();
         const p1 = { x, y };
-        flattenArc(cur, rx, ry, rot, laf, sf, p1);
+        flattenArc(cur, rx, ry, rot, laf, sf, p1, current);
         cur = p1;
         lastCubicCtrl = null;
         lastQuadCtrl = null;
@@ -491,3 +399,99 @@ function mergeLoopsWithSlits(loops: PathPoint[][]): PathPoint[] {
   return merged;
 }
 
+
+
+export function flattenCubic(p0: PathPoint, p1: PathPoint, p2: PathPoint, p3: PathPoint, out: PathPoint[]) {
+  const segments = 8;
+  for (let t = 1; t <= segments; t++) {
+    const u = t / segments;
+    const mu = 1 - u;
+    const x =
+      mu * mu * mu * p0.x + 3 * mu * mu * u * p1.x + 3 * mu * u * u * p2.x + u * u * u * p3.x;
+    const y =
+      mu * mu * mu * p0.y + 3 * mu * mu * u * p1.y + 3 * mu * u * u * p2.y + u * u * u * p3.y;
+    out.push({ x, y });
+  }
+}
+
+
+export function flattenQuad(p0: PathPoint, p1: PathPoint, p2: PathPoint, out: PathPoint[]) {
+  const segments = 6;
+  for (let t = 1; t <= segments; t++) {
+    const u = t / segments;
+    const mu = 1 - u;
+    const x = mu * mu * p0.x + 2 * mu * u * p1.x + u * u * p2.x;
+    const y = mu * mu * p0.y + 2 * mu * u * p1.y + u * u * p2.y;
+    out.push({ x, y });
+  }
+}
+
+
+export function flattenArc(
+  p0: PathPoint,
+  rxIn: number,
+  ryIn: number,
+  xAxisRotationDeg: number,
+  largeArcFlag: number,
+  sweepFlag: number,
+  p1: PathPoint,
+  out: PathPoint[],
+) {
+  if (rxIn === 0 || ryIn === 0) {
+    out.push({ ...p1 });
+    return;
+  }
+  let rx = Math.abs(rxIn);
+  let ry = Math.abs(ryIn);
+  const phi = (xAxisRotationDeg * Math.PI) / 180;
+  const cosPhi = Math.cos(phi);
+  const sinPhi = Math.sin(phi);
+
+  const dx2 = (p0.x - p1.x) / 2;
+  const dy2 = (p0.y - p1.y) / 2;
+  const x1p = cosPhi * dx2 + sinPhi * dy2;
+  const y1p = -sinPhi * dx2 + cosPhi * dy2;
+
+  const lambda = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
+  if (lambda > 1) {
+    const s = Math.sqrt(lambda);
+    rx *= s;
+    ry *= s;
+  }
+
+  const sign = largeArcFlag !== sweepFlag ? 1 : -1;
+  const num = rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p;
+  const den = rx * rx * y1p * y1p + ry * ry * x1p * x1p;
+  const coef = sign * Math.sqrt(Math.max(num / den, 0));
+  const cxp = (coef * (rx * y1p)) / ry;
+  const cyp = (coef * -(ry * x1p)) / rx;
+
+  const cx = cosPhi * cxp - sinPhi * cyp + (p0.x + p1.x) / 2;
+  const cy = sinPhi * cxp + cosPhi * cyp + (p0.y + p1.y) / 2;
+
+  const angle = (ux: number, uy: number, vx: number, vy: number) => {
+    const dot = ux * vx + uy * vy;
+    const len = Math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy));
+    let a = Math.acos(Math.min(1, Math.max(-1, dot / len)));
+    if (ux * vy - uy * vx < 0) a = -a;
+    return a;
+  };
+
+  const theta1 = angle(1, 0, (x1p - cxp) / rx, (y1p - cyp) / ry);
+  let dTheta = angle(
+    (x1p - cxp) / rx,
+    (y1p - cyp) / ry,
+    (-x1p - cxp) / rx,
+    (-y1p - cyp) / ry,
+  );
+  if (!sweepFlag && dTheta > 0) dTheta -= 2 * Math.PI;
+  if (sweepFlag && dTheta < 0) dTheta += 2 * Math.PI;
+
+  const steps = Math.max(4, Math.ceil((Math.abs(dTheta) / Math.PI) * 10));
+  for (let s = 1; s <= steps; s++) {
+    const t = theta1 + (dTheta * s) / steps;
+    const x = cx + rx * Math.cos(t) * cosPhi - ry * Math.sin(t) * sinPhi;
+    const y = cy + rx * Math.cos(t) * sinPhi + ry * Math.sin(t) * cosPhi;
+    out.push({ x, y });
+  }
+}
