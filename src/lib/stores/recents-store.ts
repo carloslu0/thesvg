@@ -68,8 +68,16 @@ function pushUnique<T extends { ts: number }>(
   match: (a: T, b: T) => boolean,
   max: number,
 ): T[] {
-  const filtered = list.filter((item) => !match(item, next));
-  return [next, ...filtered].slice(0, max);
+  const idx = list.findIndex((item) => match(item, next));
+  const result = [...list];
+  if (idx !== -1) {
+    result.splice(idx, 1);
+  }
+  result.unshift(next);
+  if (result.length > max) {
+    result.length = max;
+  }
+  return result;
 }
 
 export const useRecentsStore = create<RecentsState>()(
@@ -96,23 +104,22 @@ export const useRecentsStore = create<RecentsState>()(
         if (typeof slug !== "string" || slug.length === 0) return;
         const safe = slug.slice(0, MAX_SLUG_LENGTH);
         set((s) => {
-          const existing = s.copied.find(
-            (c) => c.slug === safe && c.format === format,
-          );
+          const idx = s.copied.findIndex((c) => c.slug === safe && c.format === format);
           const next: RecentCopied = {
             slug: safe,
             format,
             ts: Date.now(),
-            count: (existing?.count ?? 0) + 1,
+            count: (idx !== -1 ? s.copied[idx].count : 0) + 1,
           };
-          return {
-            copied: pushUnique(
-              s.copied,
-              next,
-              (a, b) => a.slug === b.slug && a.format === b.format,
-              MAX_RECENT_COPIED,
-            ),
-          };
+          const copied = [...s.copied];
+          if (idx !== -1) {
+            copied.splice(idx, 1);
+          }
+          copied.unshift(next);
+          if (copied.length > MAX_RECENT_COPIED) {
+            copied.length = MAX_RECENT_COPIED;
+          }
+          return { copied };
         });
       },
 
