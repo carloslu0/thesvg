@@ -243,6 +243,108 @@ interface PaintContext {
   stylesheet: Map<string, Record<string, string>>;
 }
 
+
+function handlePath(node: XmlNode, strokeOnly: boolean, emit: (pts: PathPoint[][]) => void, emitStroke: (sp: { points: PathPoint[]; closed: boolean }[]) => void) {
+  if (node.attrs.d) {
+    try {
+      if (strokeOnly) {
+        emitStroke(flattenPathForStroke(node.attrs.d));
+      } else {
+        emit(flattenPathData(node.attrs.d));
+      }
+    } catch {
+      // skip malformed path data rather than aborting the whole icon
+    }
+  }
+}
+
+function handleRect(node: XmlNode, strokeOnly: boolean, emit: (pts: PathPoint[][]) => void, emitStroke: (sp: { points: PathPoint[]; closed: boolean }[]) => void) {
+  const x = parseFloat(node.attrs.x || "0");
+  const y = parseFloat(node.attrs.y || "0");
+  const w = parseFloat(node.attrs.width || "0");
+  const h = parseFloat(node.attrs.height || "0");
+  if (w > 0 && h > 0) {
+    const loop: PathPoint[] = [
+      { x, y },
+      { x: x + w, y },
+      { x: x + w, y: y + h },
+      { x, y: y + h },
+    ];
+    if (strokeOnly) emitStroke([{ points: loop, closed: true }]);
+    else emit([loop]);
+  }
+}
+
+function handleCircleEllipse(node: XmlNode, strokeOnly: boolean, emit: (pts: PathPoint[][]) => void, emitStroke: (sp: { points: PathPoint[]; closed: boolean }[]) => void) {
+  const cx = parseFloat(node.attrs.cx || "0");
+  const cy = parseFloat(node.attrs.cy || "0");
+  const rx = parseFloat(node.attrs.rx || node.attrs.r || "0");
+  const ry = parseFloat(node.attrs.ry || node.attrs.r || "0");
+  if (rx > 0 && ry > 0) {
+    const loop: PathPoint[] = [];
+    const steps = 32;
+    for (let s = 0; s < steps; s++) {
+      const t = (s / steps) * Math.PI * 2;
+      loop.push({ x: cx + rx * Math.cos(t), y: cy + ry * Math.sin(t) });
+    }
+    if (strokeOnly) emitStroke([{ points: loop, closed: true }]);
+    else emit([loop]);
+  }
+}
+
+function handlePolygonPolyline(node: XmlNode, strokeOnly: boolean, emit: (pts: PathPoint[][]) => void, emitStroke: (sp: { points: PathPoint[]; closed: boolean }[]) => void) {
+  if (node.attrs.points) {
+    const pts = pointsFromAttr(node.attrs.points);
+    if (strokeOnly && pts.length >= 2) {
+      // A <polygon> is implicitly closed even for its stroke; a
+      // <polyline> is not.
+      emitStroke([{ points: pts, closed: node.tag === "polygon" }]);
+    } else if (!strokeOnly && pts.length >= 3) {
+      emit([pts]);
+    }
+  }
+}
+
+function handleUse(node: XmlNode, combined: Mat, ctx: PaintContext, childCtx: PaintContext, out: FlattenedPolygon[], depth: number) {
+  if (depth >= MAX_USE_DEPTH) {
+    console.warn(`  svg-to-excalidraw: <use> nesting exceeded ${MAX_USE_DEPTH}, likely a cycle; skipping`);
+    return;
+  }
+  const targetId = resolveUseHref(node.attrs);
+  const target = targetId ? ctx.idIndex.get(targetId) : undefined;
+  if (!target || target === node) return;
+
+  // <use x, y> is a plain additional translate for an ordinary
+  // referenced element. For a <symbol> target, x/y/width/height
+  // instead establish a *viewport* that the symbol's own viewBox gets
+  // fit into (real SVG-in-SVG semantics we don't implement) - treating
+  // them as a plain translate double-counts an offset that a
+  // hand-authored `transform` on the same <use> may already fully
+  // compensate for (confirmed on a real icon: marqeta's use element
+  // carries both `x="-752.1" y="-107.3"` *and*
+  // `transform="matrix(0.37 0 0 0.37 278.3 39.7)"`, where the matrix
+  // alone already maps the symbol's declared viewBox exactly onto the
+  // root viewBox). So x/y are only applied when the target isn't a
+  // <symbol>.
+  let targetMatrix = combined;
+  if (target.tag !== "symbol") {
+    const ux = parseFloat(node.attrs.x || "0");
+    const uy = parseFloat(node.attrs.y || "0");
+    if (ux || uy) targetMatrix = multiplyMat(combined, [1, 0, 0, 1, ux, uy]);
+  }
+
+  if (VOID_UNSUPPORTED.has(target.tag)) {
+    // The target is a container that's never painted directly (e.g. a
+    // <symbol>, or a shape parked inside <defs> alongside real defs);
+    // walk its children in its place instead of bailing on it.
+    for (const child of target.children) {
+      walk(child, targetMatrix, childCtx, out, depth + 1);
+    }
+  } else {
+    walk(target, targetMatrix, childCtx, out, depth + 1);
+  }
+}
+
 function walk(node: XmlNode, matrix: Mat, ctx: PaintContext, out: FlattenedPolygon[], depth = 0) {
   if (VOID_UNSUPPORTED.has(node.tag)) return;
   if (hasUnsupportedBlendMode(node.attrs)) return;
@@ -315,109 +417,23 @@ function walk(node: XmlNode, matrix: Mat, ctx: PaintContext, out: FlattenedPolyg
   };
 
   switch (node.tag) {
-    case "path": {
-      if (node.attrs.d) {
-        try {
-          if (strokeOnly) {
-            emitStroke(flattenPathForStroke(node.attrs.d));
-          } else {
-            emit(flattenPathData(node.attrs.d));
-          }
-        } catch {
-          // skip malformed path data rather than aborting the whole icon
-        }
-      }
+    case "path":
+      handlePath(node, strokeOnly, emit, emitStroke);
       break;
-    }
-    case "rect": {
-      const x = parseFloat(node.attrs.x || "0");
-      const y = parseFloat(node.attrs.y || "0");
-      const w = parseFloat(node.attrs.width || "0");
-      const h = parseFloat(node.attrs.height || "0");
-      if (w > 0 && h > 0) {
-        const loop: PathPoint[] = [
-          { x, y },
-          { x: x + w, y },
-          { x: x + w, y: y + h },
-          { x, y: y + h },
-        ];
-        if (strokeOnly) emitStroke([{ points: loop, closed: true }]);
-        else emit([loop]);
-      }
+    case "rect":
+      handleRect(node, strokeOnly, emit, emitStroke);
       break;
-    }
     case "circle":
-    case "ellipse": {
-      const cx = parseFloat(node.attrs.cx || "0");
-      const cy = parseFloat(node.attrs.cy || "0");
-      const rx = parseFloat(node.attrs.rx || node.attrs.r || "0");
-      const ry = parseFloat(node.attrs.ry || node.attrs.r || "0");
-      if (rx > 0 && ry > 0) {
-        const loop: PathPoint[] = [];
-        const steps = 32;
-        for (let s = 0; s < steps; s++) {
-          const t = (s / steps) * Math.PI * 2;
-          loop.push({ x: cx + rx * Math.cos(t), y: cy + ry * Math.sin(t) });
-        }
-        if (strokeOnly) emitStroke([{ points: loop, closed: true }]);
-        else emit([loop]);
-      }
+    case "ellipse":
+      handleCircleEllipse(node, strokeOnly, emit, emitStroke);
       break;
-    }
     case "polygon":
-    case "polyline": {
-      if (node.attrs.points) {
-        const pts = pointsFromAttr(node.attrs.points);
-        if (strokeOnly && pts.length >= 2) {
-          // A <polygon> is implicitly closed even for its stroke; a
-          // <polyline> is not.
-          emitStroke([{ points: pts, closed: node.tag === "polygon" }]);
-        } else if (!strokeOnly && pts.length >= 3) {
-          emit([pts]);
-        }
-      }
+    case "polyline":
+      handlePolygonPolyline(node, strokeOnly, emit, emitStroke);
       break;
-    }
-    case "use": {
-      if (depth >= MAX_USE_DEPTH) {
-        console.warn(`  svg-to-excalidraw: <use> nesting exceeded ${MAX_USE_DEPTH}, likely a cycle; skipping`);
-        break;
-      }
-      const targetId = resolveUseHref(node.attrs);
-      const target = targetId ? ctx.idIndex.get(targetId) : undefined;
-      if (!target || target === node) break;
-
-      // <use x, y> is a plain additional translate for an ordinary
-      // referenced element. For a <symbol> target, x/y/width/height
-      // instead establish a *viewport* that the symbol's own viewBox gets
-      // fit into (real SVG-in-SVG semantics we don't implement) - treating
-      // them as a plain translate double-counts an offset that a
-      // hand-authored `transform` on the same <use> may already fully
-      // compensate for (confirmed on a real icon: marqeta's use element
-      // carries both `x="-752.1" y="-107.3"` *and*
-      // `transform="matrix(0.37 0 0 0.37 278.3 39.7)"`, where the matrix
-      // alone already maps the symbol's declared viewBox exactly onto the
-      // root viewBox). So x/y are only applied when the target isn't a
-      // <symbol>.
-      let targetMatrix = combined;
-      if (target.tag !== "symbol") {
-        const ux = parseFloat(node.attrs.x || "0");
-        const uy = parseFloat(node.attrs.y || "0");
-        if (ux || uy) targetMatrix = multiplyMat(combined, [1, 0, 0, 1, ux, uy]);
-      }
-
-      if (VOID_UNSUPPORTED.has(target.tag)) {
-        // The target is a container that's never painted directly (e.g. a
-        // <symbol>, or a shape parked inside <defs> alongside real defs);
-        // walk its children in its place instead of bailing on it.
-        for (const child of target.children) {
-          walk(child, targetMatrix, childCtx, out, depth + 1);
-        }
-      } else {
-        walk(target, targetMatrix, childCtx, out, depth + 1);
-      }
+    case "use":
+      handleUse(node, combined, ctx, childCtx, out, depth);
       break;
-    }
     default:
       break;
   }
