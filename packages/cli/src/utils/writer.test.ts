@@ -33,40 +33,27 @@ for (const { name, in: input, out: expected } of cases) {
 }
 
 test("relativeToCwd", async (t) => {
-  await t.test("prepends ./ when path is within cwd", () => {
+  t.beforeEach(() => {
     mock.method(process, 'cwd', () => '/mock/cwd');
-    try {
-      assert.equal(relativeToCwd('/mock/cwd/src/index.ts'), './src/index.ts');
-    } finally {
-      mock.restoreAll();
-    }
+  });
+
+  t.afterEach(() => {
+    mock.restoreAll();
+  });
+
+  await t.test("prepends ./ when path is within cwd", () => {
+    assert.equal(relativeToCwd('/mock/cwd/src/index.ts'), './src/index.ts');
   });
 
   await t.test("prepends ./ when path is absolute but outside cwd", () => {
-    mock.method(process, 'cwd', () => '/mock/cwd');
-    try {
-      // The function currently turns any absolute path into a dot-relative path
-      assert.equal(relativeToCwd('/some/other/path/file.ts'), './some/other/path/file.ts');
-    } finally {
-      mock.restoreAll();
-    }
+    assert.equal(relativeToCwd('/some/other/path/file.ts'), './some/other/path/file.ts');
   });
 
   await t.test("returns empty string if path is exactly cwd", () => {
-    mock.method(process, 'cwd', () => '/mock/cwd');
-    try {
-      assert.equal(relativeToCwd('/mock/cwd'), '');
-    } finally {
-      mock.restoreAll();
-    }
+    assert.equal(relativeToCwd('/mock/cwd'), '');
   });
 
   await t.test("returns path unchanged if it's already relative", () => {
-    mock.method(process, 'cwd', () => '/mock/cwd');
-    try {
-      assert.equal(relativeToCwd('src/index.ts'), 'src/index.ts');
-    } finally {
-      mock.restoreAll();
-    }
+    assert.equal(relativeToCwd('src/index.ts'), 'src/index.ts');
   });
 });
