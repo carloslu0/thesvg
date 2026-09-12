@@ -66,22 +66,26 @@ export function QuickImport({ onImport, className }: QuickImportProps) {
     );
   }, [icons]);
 
+  const searchableIcons = useMemo(() => {
+    if (!icons) return [];
+    return icons.map((icon) => ({
+      icon,
+      searchString: [icon.slug, icon.title, ...icon.aliases].join("\n").toLowerCase(),
+    }));
+  }, [icons]);
+
   const matches = useMemo(() => {
-    if (!icons || !query.trim()) return [];
+    if (!searchableIcons.length || !query.trim()) return [];
     const q = query.trim().toLowerCase();
     const result: IconEntry[] = [];
-    for (const icon of icons) {
+    for (let i = 0; i < searchableIcons.length; i++) {
       if (result.length >= 8) break;
-      if (
-        icon.slug.toLowerCase().includes(q) ||
-        icon.title.toLowerCase().includes(q) ||
-        icon.aliases.some((a) => a.toLowerCase().includes(q))
-      ) {
-        result.push(icon);
+      if (searchableIcons[i].searchString.includes(q)) {
+        result.push(searchableIcons[i].icon);
       }
     }
     return result;
-  }, [icons, query]);
+  }, [searchableIcons, query]);
 
   const loadIcon = useCallback(
     async (icon: IconEntry) => {
