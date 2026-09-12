@@ -244,7 +244,12 @@ interface PaintContext {
 }
 
 
-function handlePath(node: XmlNode, strokeOnly: boolean, emit: (pts: PathPoint[][]) => void, emitStroke: (sp: { points: PathPoint[]; closed: boolean }[]) => void) {
+function resolvePathNode(
+  node: XmlNode,
+  strokeOnly: boolean,
+  emit: (localPts: PathPoint[][]) => void,
+  emitStroke: (subpaths: { points: PathPoint[]; closed: boolean }[]) => void,
+) {
   if (node.attrs.d) {
     try {
       if (strokeOnly) {
@@ -258,7 +263,12 @@ function handlePath(node: XmlNode, strokeOnly: boolean, emit: (pts: PathPoint[][
   }
 }
 
-function handleRect(node: XmlNode, strokeOnly: boolean, emit: (pts: PathPoint[][]) => void, emitStroke: (sp: { points: PathPoint[]; closed: boolean }[]) => void) {
+function resolveRectNode(
+  node: XmlNode,
+  strokeOnly: boolean,
+  emit: (localPts: PathPoint[][]) => void,
+  emitStroke: (subpaths: { points: PathPoint[]; closed: boolean }[]) => void,
+) {
   const x = parseFloat(node.attrs.x || "0");
   const y = parseFloat(node.attrs.y || "0");
   const w = parseFloat(node.attrs.width || "0");
@@ -275,7 +285,12 @@ function handleRect(node: XmlNode, strokeOnly: boolean, emit: (pts: PathPoint[][
   }
 }
 
-function handleCircleEllipse(node: XmlNode, strokeOnly: boolean, emit: (pts: PathPoint[][]) => void, emitStroke: (sp: { points: PathPoint[]; closed: boolean }[]) => void) {
+function resolveCircleEllipseNode(
+  node: XmlNode,
+  strokeOnly: boolean,
+  emit: (localPts: PathPoint[][]) => void,
+  emitStroke: (subpaths: { points: PathPoint[]; closed: boolean }[]) => void,
+) {
   const cx = parseFloat(node.attrs.cx || "0");
   const cy = parseFloat(node.attrs.cy || "0");
   const rx = parseFloat(node.attrs.rx || node.attrs.r || "0");
@@ -292,7 +307,12 @@ function handleCircleEllipse(node: XmlNode, strokeOnly: boolean, emit: (pts: Pat
   }
 }
 
-function handlePolygonPolyline(node: XmlNode, strokeOnly: boolean, emit: (pts: PathPoint[][]) => void, emitStroke: (sp: { points: PathPoint[]; closed: boolean }[]) => void) {
+function resolvePolygonPolylineNode(
+  node: XmlNode,
+  strokeOnly: boolean,
+  emit: (localPts: PathPoint[][]) => void,
+  emitStroke: (subpaths: { points: PathPoint[]; closed: boolean }[]) => void,
+) {
   if (node.attrs.points) {
     const pts = pointsFromAttr(node.attrs.points);
     if (strokeOnly && pts.length >= 2) {
@@ -305,7 +325,14 @@ function handlePolygonPolyline(node: XmlNode, strokeOnly: boolean, emit: (pts: P
   }
 }
 
-function handleUse(node: XmlNode, combined: Mat, ctx: PaintContext, childCtx: PaintContext, out: FlattenedPolygon[], depth: number) {
+function resolveUseNode(
+  node: XmlNode,
+  ctx: PaintContext,
+  combined: Mat,
+  childCtx: PaintContext,
+  out: FlattenedPolygon[],
+  depth: number,
+) {
   if (depth >= MAX_USE_DEPTH) {
     console.warn(`  svg-to-excalidraw: <use> nesting exceeded ${MAX_USE_DEPTH}, likely a cycle; skipping`);
     return;
@@ -418,21 +445,21 @@ function walk(node: XmlNode, matrix: Mat, ctx: PaintContext, out: FlattenedPolyg
 
   switch (node.tag) {
     case "path":
-      handlePath(node, strokeOnly, emit, emitStroke);
+      resolvePathNode(node, strokeOnly, emit, emitStroke);
       break;
     case "rect":
-      handleRect(node, strokeOnly, emit, emitStroke);
+      resolveRectNode(node, strokeOnly, emit, emitStroke);
       break;
     case "circle":
     case "ellipse":
-      handleCircleEllipse(node, strokeOnly, emit, emitStroke);
+      resolveCircleEllipseNode(node, strokeOnly, emit, emitStroke);
       break;
     case "polygon":
     case "polyline":
-      handlePolygonPolyline(node, strokeOnly, emit, emitStroke);
+      resolvePolygonPolylineNode(node, strokeOnly, emit, emitStroke);
       break;
     case "use":
-      handleUse(node, combined, ctx, childCtx, out, depth);
+      resolveUseNode(node, ctx, combined, childCtx, out, depth);
       break;
     default:
       break;
