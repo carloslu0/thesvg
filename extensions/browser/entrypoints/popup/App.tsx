@@ -98,7 +98,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const handleMessage = (message: any) => {
+    const handleMessage = (message: { type: string; data?: { icons?: IconEntry[] } }) => {
       if (message.type === "REGISTRY_REFRESHED" && message.data?.icons) {
         setIcons(message.data.icons);
       }
