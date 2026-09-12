@@ -320,6 +320,10 @@ export function HomeHero({
   // popular grids, category rows). The hero carousel content renders immediately;
   // icons appear progressively as the manifest loads.
   const [icons, setIcons] = useState<IconEntry[]>([]);
+  const iconsBySlug = useMemo(
+    () => new Map(icons.map((i) => [i.slug, i])),
+    [icons]
+  );
   useEffect(() => {
     loadIconsManifest()
       .then(setIcons)
@@ -363,15 +367,14 @@ export function HomeHero({
   const clearViewed = useRecentsStore((s) => s.clearViewed);
   const recentViewedIcons = useMemo(() => {
     if (recentViewed.length === 0 || icons.length === 0) return [];
-    const bySlug = new Map(icons.map((i) => [i.slug, i]));
     return recentViewed
       .map((r) => {
-        const entry = bySlug.get(r.slug);
+        const entry = iconsBySlug.get(r.slug);
         return entry ? { entry, ts: r.ts } : null;
       })
       .filter((v): v is { entry: IconEntry; ts: number } => Boolean(v))
       .slice(0, 8);
-  }, [recentViewed, icons]);
+  }, [recentViewed, icons, iconsBySlug]);
 
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -410,9 +413,9 @@ export function HomeHero({
     };
     const slugs = slugMap[activeCollection] ?? POPULAR_SLUGS;
     return slugs
-      .map((slug) => icons.find((i) => i.slug === slug))
+      .map((slug) => iconsBySlug.get(slug))
       .filter(Boolean) as IconEntry[];
-  }, [icons, activeCollection]);
+  }, [activeCollection, iconsBySlug]);
 
   // Categories for active collection
   const topCategories = useMemo(() => {
@@ -450,9 +453,9 @@ export function HomeHero({
       : fallbackSlide;
     const slugs = activeSlide.floatSlugs.slice(0, 6);
     return slugs
-      .map((s) => icons.find((i) => i.slug === s))
+      .map((s) => iconsBySlug.get(s))
       .filter(Boolean) as IconEntry[];
-  }, [icons, currentSlide, collectionSlides, fallbackSlide]);
+  }, [currentSlide, collectionSlides, fallbackSlide, iconsBySlug]);
 
   // Predefined positions for floating icons (scattered, not grid)
   const FLOAT_POSITIONS = [
