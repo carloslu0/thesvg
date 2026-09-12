@@ -7,6 +7,7 @@ import type { IconEntry } from "@/lib/icons";
 import { Google2026Tile } from "./google-2026-tile";
 import {
   COLOR_BUCKETS,
+  COLOR_BUCKETS_BY_ID,
   colorBucket,
   type ColorBucket,
 } from "@/lib/color-bucket";
@@ -304,7 +305,7 @@ export function Google2026Landing({ icons }: Props) {
               {query.trim() && activeColors.size > 0 ? " with " : null}
               {activeColors.size > 0 ? (
                 <strong>
-                  {[...activeColors].map((c) => COLOR_BUCKETS.find((b) => b.id === c)?.label).join(" + ")}
+                  {[...activeColors].map((c) => COLOR_BUCKETS_BY_ID.get(c)?.label).join(" + ")}
                 </strong>
               ) : null}
               .

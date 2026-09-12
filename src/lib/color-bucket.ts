@@ -39,3 +39,7 @@ export const COLOR_BUCKETS: { id: ColorBucket; label: string; hex: string }[] = 
   { id: "purple", label: "Purple", hex: "#7248B9" },
   { id: "neutral", label: "Neutral", hex: "#5F6368" },
 ];
+
+export const COLOR_BUCKETS_BY_ID = new Map(
+  COLOR_BUCKETS.map((b) => [b.id, b] as const)
+);
