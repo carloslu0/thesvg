@@ -1,8 +1,8 @@
+import { defineBackground } from "wxt/sandbox";
 /**
  * Background service worker.
  * Handles registry fetch and caching with a 24-hour TTL.
  *
- * TODO (v1.1): add context menu integration
  * TODO (v1.1): push registry refresh notification to popup via chrome.runtime.sendMessage
  */
 
@@ -60,9 +60,57 @@ export default defineBackground(() => {
   }
 
   // Fetch registry on install and on startup
+
+  // Set up context menus
   chrome.runtime.onInstalled.addListener(() => {
     fetchAndCacheRegistry();
+
+    chrome.contextMenus.create({
+      id: "thesvg-search-selection",
+      title: 'Search theSVG for "%s"',
+      contexts: ["selection"]
+    });
+
+    chrome.contextMenus.create({
+      id: "thesvg-search-image",
+      title: "Search theSVG for image",
+      contexts: ["image"]
+    });
   });
+
+  chrome.contextMenus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId === "thesvg-search-selection" && info.selectionText) {
+      openSearchPopup(info.selectionText);
+    } else if (info.menuItemId === "thesvg-search-image" && tab?.id) {
+      // Execute script to get alt text of the clicked image
+      chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        args: [info.srcUrl],
+        func: (srcUrl) => {
+          const imgs = document.querySelectorAll('img');
+          for (const img of imgs) {
+            if (img.src === srcUrl && img.alt) {
+              return img.alt;
+            }
+          }
+          return null;
+        }
+      }).then((results) => {
+        const altText = results?.[0]?.result;
+        openSearchPopup(altText || "");
+      }).catch(err => {
+        console.error("Failed to execute script for image alt text:", err);
+        openSearchPopup("");
+      });
+    }
+  });
+
+  function openSearchPopup(query: string) {
+    chrome.tabs.create({
+      url: chrome.runtime.getURL(`popup/index.html?q=${encodeURIComponent(query)}`)
+    });
+  }
+
 
   chrome.runtime.onStartup.addListener(() => {
     fetchAndCacheRegistry();

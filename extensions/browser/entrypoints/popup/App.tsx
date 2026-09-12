@@ -73,7 +73,13 @@ type Status = "loading" | "ready" | "error";
 export default function App() {
   const [status, setStatus] = useState<Status>("loading");
   const [icons, setIcons] = useState<IconEntry[]>([]);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("q") || "";
+    }
+    return "";
+  });
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<string>("default");
   const [toast, setToast] = useState<string | null>(null);
