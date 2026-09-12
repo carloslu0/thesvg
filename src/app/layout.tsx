@@ -9,7 +9,7 @@ import { ScrollToTop } from "@/components/scroll-to-top";
 import { MobileShell } from "@/components/mobile/mobile-shell";
 import { NotificationToasts } from "@/components/notification-toasts";
 import { StoreHydration } from "@/components/store-hydration";
-import { getFormattedIconCount } from "@/lib/icons";
+import { getFormattedIconCount, getCollections } from "@/lib/icons";
 import postsData from "@/data/posts.json";
 import "./globals.css";
 
@@ -29,6 +29,7 @@ const inter = Inter({
 });
 
 const count = getFormattedIconCount();
+const collectionCounts = getCollections();
 
 export const metadata: Metadata = {
   title: {
@@ -163,7 +164,7 @@ export default function RootLayout({
               Below `lg` the MobileShell renders its own top bar + bottom
               dock to deliver an app-like feel. */}
           <Suspense>
-            <Header />
+            <Header collectionCounts={collectionCounts} />
           </Suspense>
           <Suspense>
             <MobileShell>

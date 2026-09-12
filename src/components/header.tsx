@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import posthog from "posthog-js";
 import { usePathname, useRouter } from "next/navigation";
@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { useSidebarStore } from "@/lib/stores/sidebar-store";
 import { useSearchStore } from "@/lib/stores/search-store";
 import { useRecentsStore } from "@/lib/stores/recents-store";
-import { getCollections, type IconEntry } from "@/lib/icons";
+import type { Collection, IconEntry } from "@/lib/icons";
 import { COLLECTIONS_LIST } from "@/lib/collections-meta";
 import { loadIconsManifest } from "@/lib/icons-manifest";
 import { cn } from "@/lib/utils";
@@ -60,7 +60,16 @@ function gaSearch(query: string) {
 
 const FIGMA_BADGE_EXPIRES_AT = Date.UTC(2026, 5, 3);
 
-export function Header() {
+interface HeaderProps {
+  /**
+   * Per-collection icon counts, computed server-side in layout.tsx (source
+   * of truth: icons.json). Passed in as a prop so this client component
+   * never needs a runtime import of the full icon dataset.
+   */
+  collectionCounts: { name: Collection; count: number }[];
+}
+
+export function Header({ collectionCounts }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const defaultCopyFormat = useSettingsStore((s) => s.defaultCopyFormat);
   const setDefaultCopyFormat = useSettingsStore((s) => s.setDefaultCopyFormat);
@@ -103,11 +112,6 @@ export function Header() {
   );
   const [focused, setFocused] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(-1);
-
-  // Live per-collection counts (icons.json is the source of truth), so the
-  // quick-access list below never drifts out of sync the way hardcoded
-  // counts did.
-  const collectionCounts = useMemo(() => getCollections(), []);
 
   const activeCollection =
     searchParams.get("collection") ||
