@@ -1,8 +1,6 @@
 /**
  * Background service worker.
  * Handles registry fetch and caching with a 24-hour TTL.
- *
- * TODO (v1.1): push registry refresh notification to popup via chrome.runtime.sendMessage
  */
 
 export default defineBackground(() => {
@@ -53,6 +51,7 @@ export default defineBackground(() => {
       };
 
       await chrome.storage.local.set({ [CACHE_KEY]: cacheEntry });
+      chrome.runtime.sendMessage({ type: "REGISTRY_REFRESHED" }).catch(() => {});
     } catch (err) {
       console.error("[theSVG background] Registry fetch error:", err);
     }
