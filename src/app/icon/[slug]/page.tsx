@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { JsonLd } from "@/components/json-ld";
 import { notFound } from "next/navigation";
-import { getAllIcons, getIconBySlug } from "@/lib/icons";
+import { getAllIcons, getIconBySlug, getIconsByCategory, getCategoryCounts } from "@/lib/icons";
 import { IconPageClient } from "@/components/icons/icon-page-client";
 import { categoryUrl } from "@/lib/categories";
 import type { Metadata } from "next";
@@ -140,6 +140,78 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+/**
+ * Resolve everything IconPageClient/IconDetailPage need up front, server-side,
+ * so the client only ever receives plain props instead of re-importing the
+ * full icons dataset to recompute this per navigation (that recomputation
+ * used to run client-side across 7,400+ statically generated icon pages).
+ */
+function resolveIconPageData(icon: NonNullable<ReturnType<typeof getIconBySlug>>) {
+  const categoryCounts = getCategoryCounts();
+
+  const primaryCategory = icon.categories[0] ?? null;
+  const relatedIcons = primaryCategory
+    ? getIconsByCategory(primaryCategory)
+        .filter((rel) => rel.slug !== icon.slug)
+        .slice(0, 8)
+    : [];
+
+  let versionCounterpartSlug: string | null = null;
+  let versionCounterpartYear: string | null = null;
+  let versionCounterpartIsNewer = false;
+
+  const yearMatch = /^(.+)-(\d{4})$/.exec(icon.slug);
+  if (yearMatch) {
+    const originalSlug = yearMatch[1];
+    if (getIconBySlug(originalSlug)) {
+      versionCounterpartSlug = originalSlug;
+      versionCounterpartYear = yearMatch[2];
+      versionCounterpartIsNewer = false;
+    }
+  } else {
+    // Scan the full icon list for any slug-YYYY counterpart rather than
+    // assuming a fixed year window, so newly-bundled refresh icons are
+    // always picked up regardless of the build year.
+    const allSlugs = new Set(getAllIcons().map((i) => i.slug));
+    const prefix = `${icon.slug}-`;
+    let latest: { slug: string; year: number } | null = null;
+    for (const s of allSlugs) {
+      if (!s.startsWith(prefix)) continue;
+      const yearStr = s.slice(prefix.length);
+      if (!/^\d{4}$/.test(yearStr)) continue;
+      const year = parseInt(yearStr, 10);
+      if (!latest || year > latest.year) latest = { slug: s, year };
+    }
+    if (latest) {
+      versionCounterpartSlug = latest.slug;
+      versionCounterpartYear = String(latest.year);
+      versionCounterpartIsNewer = true;
+    }
+  }
+
+  const lineageSlug = icon.supersededBy ?? icon.supersedes ?? null;
+  const lineageIcon = lineageSlug ? getIconBySlug(lineageSlug) ?? null : null;
+
+  const isBadge = icon.collection === "auth-badges";
+  const badgeCounterpartSlug = isBadge
+    ? icon.slug.replace(/-badge$/, "")
+    : `${icon.slug}-badge`;
+  const badgeCounterpart =
+    badgeCounterpartSlug !== icon.slug
+      ? getIconBySlug(badgeCounterpartSlug) ?? null
+      : null;
+
+  return {
+    categoryCounts,
+    relatedIcons,
+    versionCounterpartSlug,
+    versionCounterpartYear,
+    versionCounterpartIsNewer,
+    lineageIcon,
+    badgeCounterpart,
+  };
+}
+
 export default async function IconPage({ params }: PageProps) {
   const { slug } = await params;
   const icon = getIconBySlug(slug);
@@ -258,11 +330,30 @@ export default async function IconPage({ params }: PageProps) {
     ],
   };
 
+  const {
+    categoryCounts,
+    relatedIcons,
+    versionCounterpartSlug,
+    versionCounterpartYear,
+    versionCounterpartIsNewer,
+    lineageIcon,
+    badgeCounterpart,
+  } = resolveIconPageData(icon);
+
   return (
     <>
       <JsonLd data={jsonLd} />
       <Suspense>
-        <IconPageClient slug={slug} />
+        <IconPageClient
+          icon={icon}
+          categoryCounts={categoryCounts}
+          relatedIcons={relatedIcons}
+          versionCounterpartSlug={versionCounterpartSlug}
+          versionCounterpartYear={versionCounterpartYear}
+          versionCounterpartIsNewer={versionCounterpartIsNewer}
+          lineageIcon={lineageIcon}
+          badgeCounterpart={badgeCounterpart}
+        />
       </Suspense>
     </>
   );

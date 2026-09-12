@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { BookOpenText } from "@phosphor-icons/react/dist/ssr";
 import { Badge } from "@/components/ui/badge";
-import { getIconBySlug, type IconEntry } from "@/lib/icons";
+import type { IconEntry } from "@/lib/icons";
 import { useFavoritesStore } from "@/lib/stores/favorites-store";
 import { useRecentsStore } from "@/lib/stores/recents-store";
 import { cn } from "@/lib/utils";
@@ -38,6 +38,10 @@ interface IconDetailPageProps {
   versionCounterpartSlug?: string | null;
   versionCounterpartYear?: string | null;
   versionCounterpartIsNewer?: boolean;
+  /** Supersedes/supersededBy lineage target, resolved server-side. */
+  lineageIcon?: IconEntry | null;
+  /** Brand <-> auth-badge counterpart, resolved server-side. */
+  badgeCounterpart?: IconEntry | null;
 }
 
 export function IconDetailPage({
@@ -46,6 +50,8 @@ export function IconDetailPage({
   versionCounterpartSlug,
   versionCounterpartYear,
   versionCounterpartIsNewer,
+  lineageIcon = null,
+  badgeCounterpart = null,
 }: IconDetailPageProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -305,19 +311,16 @@ export function IconDetailPage({
             </div>
           )}
 
-          {(icon.supersedes || icon.supersededBy) && (() => {
-            const otherSlug = icon.supersededBy ?? icon.supersedes!;
-            const other = getIconBySlug(otherSlug);
-            if (!other) return null;
+          {lineageIcon && (() => {
             const isOlder = Boolean(icon.supersededBy);
             return (
               <Link
-                href={`/icon/${other.slug}`}
+                href={`/icon/${lineageIcon.slug}`}
                 className="group/lineage flex items-center gap-3 rounded-xl border border-orange-500/30 bg-gradient-to-r from-orange-500/[0.06] to-amber-500/[0.04] p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-orange-500/50 hover:shadow-md"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background ring-1 ring-inset ring-border/40">
                   <img
-                    src={other.variants.default}
+                    src={lineageIcon.variants.default}
                     alt=""
                     className="h-6 w-6 object-contain"
                     loading="lazy"
@@ -328,7 +331,7 @@ export function IconDetailPage({
                     {isOlder ? "Current version" : "Previous version"}
                   </span>
                   <span className="block truncate text-sm font-medium text-foreground">
-                    {other.title}
+                    {lineageIcon.title}
                   </span>
                 </span>
                 <ArrowUpRight className="h-4 w-4 shrink-0 text-orange-600 transition-transform group-hover/lineage:translate-x-0.5 group-hover/lineage:-translate-y-0.5 dark:text-orange-400" />
@@ -336,22 +339,16 @@ export function IconDetailPage({
             );
           })()}
 
-          {(() => {
+          {badgeCounterpart && (() => {
             const isBadge = icon.collection === "auth-badges";
-            const counterpartSlug = isBadge
-              ? icon.slug.replace(/-badge$/, "")
-              : `${icon.slug}-badge`;
-            if (counterpartSlug === icon.slug) return null;
-            const counterpart = getIconBySlug(counterpartSlug);
-            if (!counterpart) return null;
             return (
               <Link
-                href={`/icon/${counterpart.slug}`}
+                href={`/icon/${badgeCounterpart.slug}`}
                 className="group/badge-link flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/[0.06] to-teal-500/[0.04] p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-500/50 hover:shadow-md"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background ring-1 ring-inset ring-border/40">
                   <img
-                    src={counterpart.variants.default}
+                    src={badgeCounterpart.variants.default}
                     alt=""
                     className="h-6 w-6 object-contain"
                     loading="lazy"
@@ -362,7 +359,7 @@ export function IconDetailPage({
                     {isBadge ? "Brand logo" : "Also available as"}
                   </span>
                   <span className="block truncate text-sm font-medium text-foreground">
-                    {isBadge ? counterpart.title : "Auth Badge"}
+                    {isBadge ? badgeCounterpart.title : "Auth Badge"}
                   </span>
                 </span>
                 <ArrowUpRight className="h-4 w-4 shrink-0 text-emerald-600 transition-transform group-hover/badge-link:translate-x-0.5 group-hover/badge-link:-translate-y-0.5 dark:text-emerald-400" />

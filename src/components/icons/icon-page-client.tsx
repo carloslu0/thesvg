@@ -1,77 +1,36 @@
 "use client";
 
-import { useMemo } from "react";
-import { getAllIcons, getIconBySlug, getIconsByCategory, getCategoryCounts } from "@/lib/icons";
+import type { IconEntry } from "@/lib/icons";
 import { IconDetailPage } from "@/components/icons/icon-detail-page";
 import { SidebarShell } from "@/components/layout/sidebar-shell";
 
-export function IconPageClient({ slug }: { slug: string }) {
-  const icon = useMemo(() => getIconBySlug(slug), [slug]);
+interface IconPageClientProps {
+  icon: IconEntry;
+  categoryCounts: { name: string; count: number }[];
+  relatedIcons: IconEntry[];
+  versionCounterpartSlug: string | null;
+  versionCounterpartYear: string | null;
+  versionCounterpartIsNewer: boolean;
+  lineageIcon: IconEntry | null;
+  badgeCounterpart: IconEntry | null;
+}
 
-  const categoryCounts = useMemo(() => getCategoryCounts(), []);
-
-  const relatedIcons = useMemo(() => {
-    if (!icon) return [];
-    const primaryCategory = icon.categories[0] ?? null;
-    return primaryCategory
-      ? getIconsByCategory(primaryCategory)
-          .filter((rel) => rel.slug !== icon.slug)
-          .slice(0, 8)
-      : [];
-  }, [icon]);
-
-  const { versionCounterpartSlug, versionCounterpartYear, versionCounterpartIsNewer } =
-    useMemo(() => {
-      if (!icon) {
-        return {
-          versionCounterpartSlug: null,
-          versionCounterpartYear: null,
-          versionCounterpartIsNewer: false,
-        };
-      }
-      const yearMatch = /^(.+)-(\d{4})$/.exec(icon.slug);
-      if (yearMatch) {
-        const originalSlug = yearMatch[1];
-        if (getIconBySlug(originalSlug)) {
-          return {
-            versionCounterpartSlug: originalSlug,
-            versionCounterpartYear: yearMatch[2],
-            versionCounterpartIsNewer: false,
-          };
-        }
-      } else {
-        // Scan the full icon list for any slug-YYYY counterpart rather than
-        // assuming a fixed year window, so newly-bundled refresh icons are
-        // always picked up regardless of the build year.
-        const allIcons = getAllIcons();
-        const prefix = `${icon.slug}-`;
-        let latest: { slug: string; year: number } | null = null;
-        for (const i of allIcons) {
-          const s = i.slug;
-          if (!s.startsWith(prefix)) continue;
-          const yearStr = s.slice(prefix.length);
-          if (yearStr.length === 4 && /^\d{4}$/.test(yearStr)) {
-            const year = parseInt(yearStr, 10);
-            if (!latest || year > latest.year) latest = { slug: s, year };
-          }
-        }
-        if (latest) {
-          return {
-            versionCounterpartSlug: latest.slug,
-            versionCounterpartYear: String(latest.year),
-            versionCounterpartIsNewer: true,
-          };
-        }
-      }
-      return {
-        versionCounterpartSlug: null,
-        versionCounterpartYear: null,
-        versionCounterpartIsNewer: false,
-      };
-    }, [icon]);
-
-  if (!icon) return null;
-
+/**
+ * All data (icon, related icons, category counts, lineage/badge
+ * counterparts) is resolved server-side in page.tsx and passed in as
+ * props here, so this component (and everything it renders) never needs
+ * to re-import the full icons dataset on the client.
+ */
+export function IconPageClient({
+  icon,
+  categoryCounts,
+  relatedIcons,
+  versionCounterpartSlug,
+  versionCounterpartYear,
+  versionCounterpartIsNewer,
+  lineageIcon,
+  badgeCounterpart,
+}: IconPageClientProps) {
   return (
     <SidebarShell categoryCounts={categoryCounts}>
       <IconDetailPage
@@ -80,6 +39,8 @@ export function IconPageClient({ slug }: { slug: string }) {
         versionCounterpartSlug={versionCounterpartSlug}
         versionCounterpartYear={versionCounterpartYear}
         versionCounterpartIsNewer={versionCounterpartIsNewer}
+        lineageIcon={lineageIcon}
+        badgeCounterpart={badgeCounterpart}
       />
     </SidebarShell>
   );
