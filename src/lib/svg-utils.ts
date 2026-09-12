@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 /**
  * Utilities shared by the SVG viewer and any other surface that wants to
  * format, measure, or deep-link an SVG document (icon detail page, etc.).
@@ -141,75 +142,12 @@ export function sanitizeSvgForRender(source: string): string {
   if (typeof window === "undefined") return source;
   if (!isLikelySvg(source)) return source;
 
-  try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(source, "image/svg+xml");
-
-    // Ensure it parsed as an SVG
-    const root = doc.documentElement;
-    if (root.nodeName.toLowerCase() !== "svg") {
-      return "";
-    }
-
-    // Reject if parsererror exists (invalid XML)
-    if (doc.getElementsByTagName("parsererror").length > 0) {
-      return "";
-    }
-
-    const removeNodes: Element[] = [];
-
-    const walk = (node: Node) => {
-      if (node.nodeType === 1) { // Node.ELEMENT_NODE
-        const el = node as Element;
-        const tag = el.tagName.toLowerCase();
-        if (tag === "script" || tag === "foreignobject") {
-          removeNodes.push(el);
-          return;
-        }
-
-        const attributes = el.attributes;
-        if (attributes) {
-          const toRemove: string[] = [];
-          for (let i = 0; i < attributes.length; i++) {
-            const attr = attributes[i];
-            const name = attr.name.toLowerCase();
-            const value = attr.value.trim().toLowerCase();
-
-            if (name.startsWith("on")) {
-              toRemove.push(attr.name);
-            } else if (
-              (name === "href" || name === "xlink:href") &&
-              (value.startsWith("javascript:") ||
-                value.startsWith("vbscript:") ||
-                value.startsWith("data:text/html"))
-            ) {
-              toRemove.push(attr.name);
-            }
-          }
-          toRemove.forEach((attrName) => el.removeAttribute(attrName));
-        }
-      }
-
-      let child = node.firstChild;
-      while (child) {
-        walk(child);
-        child = child.nextSibling;
-      }
-    };
-
-    walk(root);
-
-    removeNodes.forEach((node) => {
-      if (node.parentNode) {
-        node.parentNode.removeChild(node);
-      }
-    });
-
-    const serializer = new XMLSerializer();
-    return serializer.serializeToString(doc);
-  } catch {
-    return "";
-  }
+  // @ts-ignore - DOMPurify type definitions may be slightly restrictive
+  const purify = typeof DOMPurify.sanitize === "function" ? DOMPurify : DOMPurify(window);
+  return purify.sanitize(source, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+    RETURN_DOM: false,
+  }) as string;
 }
 
 // ─── Deep links ─────────────────────────────────────────────────────────────
