@@ -2,8 +2,6 @@
  * Background service worker.
  * Handles registry fetch and caching with a 24-hour TTL.
  *
- * TODO (v1.1): add context menu integration
- * TODO (v1.1): push registry refresh notification to popup via chrome.runtime.sendMessage
  */
 
 export default defineBackground(() => {
@@ -54,6 +52,7 @@ export default defineBackground(() => {
       };
 
       await chrome.storage.local.set({ [CACHE_KEY]: cacheEntry });
+      chrome.runtime.sendMessage({ type: "REGISTRY_REFRESHED", data }).catch(() => {});
     } catch (err) {
       console.error("[theSVG background] Registry fetch error:", err);
     }
@@ -62,6 +61,22 @@ export default defineBackground(() => {
   // Fetch registry on install and on startup
   chrome.runtime.onInstalled.addListener(() => {
     fetchAndCacheRegistry();
+
+    chrome.contextMenus.create({
+      id: "search-thesvg",
+      title: "Search theSVG for '%s'",
+      contexts: ["selection"],
+    });
+  });
+
+  chrome.contextMenus.onClicked.addListener((info, _tab) => {
+    if (info.menuItemId === "search-thesvg" && info.selectionText) {
+      chrome.storage.local.set({ search_query: info.selectionText }, () => {
+        chrome.action.openPopup?.().catch((err) => {
+          console.error("Failed to open popup:", err);
+        });
+      });
+    }
   });
 
   chrome.runtime.onStartup.addListener(() => {

@@ -79,6 +79,14 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check for search query from context menu
+    chrome.storage.local.get("search_query").then((stored) => {
+      if (stored.search_query) {
+        setQuery(stored.search_query);
+        chrome.storage.local.remove("search_query");
+      }
+    });
+
     loadRegistry()
       .then((list) => {
         setIcons(list);
@@ -87,6 +95,16 @@ export default function App() {
       .catch(() => {
         setStatus("error");
       });
+  }, []);
+
+  useEffect(() => {
+    const handleMessage = (message: any) => {
+      if (message.type === "REGISTRY_REFRESHED" && message.data?.icons) {
+        setIcons(message.data.icons);
+      }
+    };
+    chrome.runtime.onMessage.addListener(handleMessage);
+    return () => chrome.runtime.onMessage.removeListener(handleMessage);
   }, []);
 
   const fuse = useMemo(
