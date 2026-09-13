@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import posthog from "posthog-js";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -14,6 +15,7 @@ export default function Error({
 }) {
   useEffect(() => {
     console.error("[thesvg] Unhandled error:", error);
+    posthog.captureException(error, { digest: error.digest });
   }, [error]);
 
   return (
