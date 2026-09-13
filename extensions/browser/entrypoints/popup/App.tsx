@@ -101,6 +101,7 @@ export default function App() {
     const handleMessage = (message: { type: string; data?: { icons?: IconEntry[] } }) => {
       if (message.type === "REGISTRY_REFRESHED" && message.data?.icons) {
         setIcons(message.data.icons);
+        setStatus("ready");
       }
     };
     chrome.runtime.onMessage.addListener(handleMessage);
