@@ -89,6 +89,34 @@ export default function App() {
       });
   }, []);
 
+  // The background worker refreshes the cached registry on install/startup
+  // and whenever the 24h TTL lapses, then broadcasts REGISTRY_REFRESHED so
+  // any open popup can pick up the new data without the user having to
+  // close and reopen it.
+  useEffect(() => {
+    function handleMessage(message: unknown): void {
+      const type =
+        typeof message === "object" && message !== null && "type" in message
+          ? (message as { type: unknown }).type
+          : undefined;
+      if (type !== "REGISTRY_REFRESHED") return;
+
+      loadRegistry()
+        .then((list) => {
+          setIcons(list);
+          setStatus("ready");
+        })
+        .catch(() => {
+          // Keep showing whatever was already loaded; only surface an
+          // error if we have nothing to show at all.
+          setStatus((prev) => (prev === "ready" ? prev : "error"));
+        });
+    }
+
+    chrome.runtime.onMessage.addListener(handleMessage);
+    return () => chrome.runtime.onMessage.removeListener(handleMessage);
+  }, []);
+
   const fuse = useMemo(
     () =>
       new Fuse(icons, {
