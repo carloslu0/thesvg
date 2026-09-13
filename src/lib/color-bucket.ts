@@ -31,7 +31,13 @@ export function colorBucket(hex: string | undefined | null): ColorBucket {
   return "red";
 }
 
-export const COLOR_BUCKETS: { id: ColorBucket; label: string; hex: string }[] = [
+export interface ColorBucketEntry {
+  id: ColorBucket;
+  label: string;
+  hex: string;
+}
+
+export const COLOR_BUCKETS: readonly ColorBucketEntry[] = [
   { id: "red", label: "Red", hex: "#EA4335" },
   { id: "yellow", label: "Yellow", hex: "#FBBC04" },
   { id: "green", label: "Green", hex: "#34A853" },
@@ -40,6 +46,8 @@ export const COLOR_BUCKETS: { id: ColorBucket; label: string; hex: string }[] = 
   { id: "neutral", label: "Neutral", hex: "#5F6368" },
 ];
 
-export const COLOR_BUCKETS_BY_ID = new Map(
+// Derived once from COLOR_BUCKETS at module load, so the lookup can never
+// drift out of sync with the array: there is only one source of truth.
+export const COLOR_BUCKETS_BY_ID: ReadonlyMap<ColorBucket, ColorBucketEntry> = new Map(
   COLOR_BUCKETS.map((b) => [b.id, b] as const)
 );
