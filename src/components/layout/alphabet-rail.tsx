@@ -80,6 +80,14 @@ export function AlphabetRail({ availableLetters, onJump, className }: AlphabetRa
         setDragging(false);
         setActiveLetter(null);
       }}
+      onPointerCancel={() => {
+        setDragging(false);
+        setActiveLetter(null);
+      }}
+      onLostPointerCapture={() => {
+        setDragging(false);
+        setActiveLetter(null);
+      }}
       onPointerLeave={() => {
         if (!dragging) setActiveLetter(null);
       }}

@@ -301,6 +301,7 @@ export function HomeContent({ categoryCounts, count, recentIcons, collections, d
       selectedCollection={collectionParam}
       onCollectionSelect={handleCollectionSelect}
       onCategorySearchChange={handleCategorySearchChange}
+      initialCategorySearch={catSearchParam}
     />
   );
 
@@ -325,6 +326,7 @@ export function HomeContent({ categoryCounts, count, recentIcons, collections, d
             selectedCollection={collectionParam}
             onCollectionSelect={handleCollectionSelect}
             onCategorySearchChange={handleCategorySearchChange}
+            initialCategorySearch={catSearchParam}
           />
         </SheetContent>
       </Sheet>

@@ -242,6 +242,12 @@ export function Header({ collectionCounts }: HeaderProps) {
       return;
     }
     let active = true;
+    // Clear stale results immediately, not just after the debounce/async
+    // search resolves, so a result from the previous query can never be
+    // clicked or Entered into while it still visually looks current.
+    setSuggestions((prev) => (prev.length === 0 ? prev : []));
+    setTotalMatches((prev) => (prev === 0 ? prev : 0));
+    setSelectedIdx((prev) => (prev === -1 ? prev : -1));
     const id = window.setTimeout(() => {
       Promise.all([loadIconsManifest(), import("@/lib/search")]).then(([icons, { searchIcons }]) => {
         if (!active) return;

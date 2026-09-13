@@ -60,6 +60,12 @@ interface SidebarProps {
    * (categories, blog, etc.) can omit this and the search just filters the
    * list shown here. */
   onCategorySearchChange?: (value: string) => void;
+  /** Current value of the URL-derived category search (e.g. from a shared
+   * link or browser back/forward), so this component's own local input
+   * stays in sync with it instead of always starting empty and clobbering
+   * it after the first debounce fires. Omit on pages with no such URL
+   * state. */
+  initialCategorySearch?: string;
 }
 
 export function Sidebar({
@@ -74,6 +80,7 @@ export function Sidebar({
   selectedCollection,
   onCollectionSelect,
   onCategorySearchChange,
+  initialCategorySearch,
 }: SidebarProps) {
   const pathname = usePathname();
   const isExtensionsPage = pathname === "/extensions";
@@ -85,9 +92,19 @@ export function Sidebar({
   const isAllIconsActive =
     !selectedCategory && !showFavorites && !selectedCollection && pathname === "/";
 
-  const [categorySearch, setCategorySearch] = useState("");
+  const [categorySearch, setCategorySearch] = useState(initialCategorySearch ?? "");
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
   const letterHeaderRefs = useRef(new Map<string, HTMLDivElement>());
+
+  // Stay in sync with the URL-derived value (shared link, back/forward
+  // navigation) without fighting the debounced write-back below. Adjusted
+  // directly during render (React's documented pattern for this, avoids an
+  // extra effect-triggered render) rather than in a useEffect.
+  const [prevInitialCategorySearch, setPrevInitialCategorySearch] = useState(initialCategorySearch);
+  if (initialCategorySearch !== undefined && initialCategorySearch !== prevInitialCategorySearch) {
+    setPrevInitialCategorySearch(initialCategorySearch);
+    setCategorySearch(initialCategorySearch);
+  }
 
   useEffect(() => {
     if (!onCategorySearchChange) return;
