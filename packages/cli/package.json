@@ -31,7 +31,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "tsx --test \"src/**/*.test.ts\" \"tests/**/*.test.ts\"",
+    "test": "find src tests -name '*.test.ts' -print0 2>/dev/null | xargs -0 -r tsx --test",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
