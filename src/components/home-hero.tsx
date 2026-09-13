@@ -256,6 +256,9 @@ const ALL_SLIDES = [
   },
 ];
 
+// Kept as a static Tailwind arbitrary-value class (`[animation-duration:6000ms]`)
+// on the progress-dot fill below rather than an inline style; if this changes,
+// update that class to match.
 const SLIDE_DURATION = 6000;
 
 interface HomeHeroProps {
@@ -459,14 +462,16 @@ export function HomeHero({
       .filter(Boolean) as IconEntry[];
   }, [currentSlide, collectionSlides, fallbackSlide, iconsBySlug]);
 
-  // Predefined positions for floating icons (scattered, not grid)
+  // Predefined positions for floating icons (scattered, not grid). Timings
+  // are baked in as Tailwind arbitrary-value classes (not inline styles)
+  // since this is a small fixed set known at build time.
   const FLOAT_POSITIONS = [
-    { top: "8%", right: "5%", size: "h-10 w-10", delay: "0s", opacity: "opacity-25" },
-    { top: "20%", right: "18%", size: "h-8 w-8", delay: "0.8s", opacity: "opacity-20" },
-    { top: "55%", right: "3%", size: "h-9 w-9", delay: "1.6s", opacity: "opacity-15" },
-    { top: "40%", right: "22%", size: "h-7 w-7", delay: "2.4s", opacity: "opacity-20" },
-    { top: "70%", right: "15%", size: "h-11 w-11", delay: "0.4s", opacity: "opacity-15" },
-    { top: "15%", right: "30%", size: "h-6 w-6", delay: "1.2s", opacity: "opacity-10" },
+    { position: "top-[8%] right-[5%]", entranceDelay: "[animation-delay:0s]", size: "h-10 w-10", opacity: "opacity-25", floatTiming: "[animation-delay:0s] [animation-duration:4s]" },
+    { position: "top-[20%] right-[18%]", entranceDelay: "[animation-delay:0.08s]", size: "h-8 w-8", opacity: "opacity-20", floatTiming: "[animation-delay:0.8s] [animation-duration:4.5s]" },
+    { position: "top-[55%] right-[3%]", entranceDelay: "[animation-delay:0.16s]", size: "h-9 w-9", opacity: "opacity-15", floatTiming: "[animation-delay:1.6s] [animation-duration:5s]" },
+    { position: "top-[40%] right-[22%]", entranceDelay: "[animation-delay:0.24s]", size: "h-7 w-7", opacity: "opacity-20", floatTiming: "[animation-delay:2.4s] [animation-duration:5.5s]" },
+    { position: "top-[70%] right-[15%]", entranceDelay: "[animation-delay:0.32s]", size: "h-11 w-11", opacity: "opacity-15", floatTiming: "[animation-delay:0.4s] [animation-duration:6s]" },
+    { position: "top-[15%] right-[30%]", entranceDelay: "[animation-delay:0.4s]", size: "h-6 w-6", opacity: "opacity-10", floatTiming: "[animation-delay:1.2s] [animation-duration:6.5s]" },
   ];
 
   return (
@@ -478,17 +483,23 @@ export function HomeHero({
         <div className="absolute -bottom-1 left-8 right-8 h-4 rounded-2xl bg-black/[0.03] blur-md dark:bg-black/20" />
 
         <div
-          className={`relative overflow-hidden rounded-3xl border border-border/40 bg-gradient-to-br ${slide.gradient} px-5 py-6 shadow-[0_8px_30px_-6px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.15)] transition-all duration-700 sm:px-10 sm:py-16 dark:border-white/[0.08] dark:shadow-[0_8px_30px_-6px_rgba(0,0,0,0.4),0_2px_8px_-2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]`}
+          className={`relative overflow-hidden rounded-3xl border border-border/40 bg-gradient-to-br ${slide.gradient} px-5 py-6 shadow-[0_8px_30px_-6px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.15)] transition-all duration-700 sm:px-10 sm:py-11 dark:border-white/[0.08] dark:shadow-[0_8px_30px_-6px_rgba(0,0,0,0.4),0_2px_8px_-2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]`}
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
           {/* Top highlight edge */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent dark:via-white/10" />
 
+          {/* One-shot light sweep on slide change, purely decorative. */}
+          <div
+            key={`shimmer-${currentSlide}`}
+            className="animate-hero-shimmer pointer-events-none absolute inset-y-0 left-0 z-10 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent dark:via-white/10"
+          />
+
           {/* Min-height reserves space so rotating slide titles/descriptions
               of different lengths don't trigger Cumulative Layout Shift.
               Sized to the longest expected slide content. */}
-          <div className="relative z-10 max-w-2xl min-h-[160px] sm:min-h-[240px]">
+          <div className="relative z-10 max-w-2xl min-h-[150px] sm:min-h-[200px]">
             {/* Slide content with fade */}
             <div key={currentSlide} className="animate-fade-in">
               {slide.badge.startsWith("npm install") ? (
@@ -513,18 +524,18 @@ export function HomeHero({
                     href={withUtm(slide.cta.href, "home_hero")}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-xl bg-foreground min-h-[40px] px-4 py-2 text-xs font-medium text-background shadow-lg shadow-black/10 transition-all hover:opacity-90 hover:shadow-xl sm:px-5 sm:py-2.5 sm:text-sm dark:shadow-black/30"
+                    className="group/cta inline-flex items-center gap-2 rounded-xl bg-foreground min-h-[40px] px-4 py-2 text-xs font-medium text-background shadow-lg shadow-black/10 transition-all hover:-translate-y-0.5 hover:opacity-90 hover:shadow-xl sm:px-5 sm:py-2.5 sm:text-sm dark:shadow-black/30"
                   >
                     {slide.cta.label}
-                    <ArrowRight className="h-3.5 w-3.5" />
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover/cta:translate-x-0.5" />
                   </a>
                 ) : (
                   <Link
                     href={slide.cta.href}
-                    className="inline-flex items-center gap-2 rounded-xl bg-foreground min-h-[40px] px-4 py-2 text-xs font-medium text-background shadow-lg shadow-black/10 transition-all hover:opacity-90 hover:shadow-xl sm:px-5 sm:py-2.5 sm:text-sm dark:shadow-black/30"
+                    className="group/cta inline-flex items-center gap-2 rounded-xl bg-foreground min-h-[40px] px-4 py-2 text-xs font-medium text-background shadow-lg shadow-black/10 transition-all hover:-translate-y-0.5 hover:opacity-90 hover:shadow-xl sm:px-5 sm:py-2.5 sm:text-sm dark:shadow-black/30"
                   >
                     {slide.cta.label}
-                    <ArrowRight className="h-3.5 w-3.5" />
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover/cta:translate-x-0.5" />
                   </Link>
                 )}
                 {slide.ctaSecondary.href.startsWith("http") ? (
@@ -548,30 +559,30 @@ export function HomeHero({
             </div>
           </div>
 
-          {/* Decorative blobs */}
-          <div className={`pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full ${slide.blob} opacity-80 blur-3xl transition-colors duration-700`} />
+          {/* Decorative blobs - the first one drifts slowly for an ambient,
+              alive backdrop instead of a static painted gradient. */}
+          <div className={`animate-glow-drift pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full ${slide.blob} opacity-80 blur-3xl transition-colors duration-700`} />
           <div className={`pointer-events-none absolute -bottom-14 -right-14 h-52 w-52 rounded-full ${slide.blob} opacity-70 blur-2xl transition-colors duration-700`} />
           <div className={`pointer-events-none absolute top-1/2 left-1/3 h-40 w-40 -translate-y-1/2 rounded-full ${slide.blob} opacity-30 blur-3xl transition-colors duration-700`} />
 
-          {/* Floating scattered icons */}
+          {/* Floating scattered icons - outer div plays a one-shot staggered
+              entrance (opacity 0->1) whenever the slide's logo set changes,
+              inner div holds the continuous float + resting dim opacity, so
+              the two animations don't fight over the same CSS property. */}
           <div className="pointer-events-none absolute inset-0 hidden lg:block">
             {floatingIcons.map((icon, i) => {
               const pos = FLOAT_POSITIONS[i];
               return (
                 <div
-                  key={icon.slug}
-                  className={`absolute animate-float ${pos.opacity}`}
-                  style={{
-                    top: pos.top,
-                    right: pos.right,
-                    animationDelay: pos.delay,
-                    animationDuration: `${4 + i * 0.5}s`,
-                  }}
+                  key={`${currentSlide}-${icon.slug}`}
+                  className={`animate-float-in absolute ${pos.position} ${pos.entranceDelay}`}
                 >
+                <div className={`animate-float ${pos.opacity} ${pos.floatTiming}`}>
                   <div className={`${pos.size} rounded-xl border border-white/10 ${slide.collection === "aws" ? "bg-[#ff9900]/10 dark:bg-[#ff9900]/5" : slide.collection === "azure" ? "bg-[#0078d4]/10 dark:bg-[#0078d4]/5" : slide.collection === "gcp" ? "bg-[#4285f4]/10 dark:bg-[#4285f4]/5" : "bg-background/30"} p-1.5 shadow-lg shadow-black/5 backdrop-blur-sm dark:border-white/5 dark:shadow-black/20`}>
                     <img src={icon.variants.light || icon.variants.default} alt="" className="h-full w-full object-contain dark:hidden" />
                     <img src={icon.variants.dark || icon.variants.default} alt="" className="hidden h-full w-full object-contain dark:block" />
                   </div>
+                </div>
                 </div>
               );
             })}
@@ -596,14 +607,7 @@ export function HomeHero({
               />
               {/* Active glow fill */}
               {i === currentSlide && !isPaused && (
-                <div
-                  className="animate-progress absolute inset-y-0 left-0 rounded-full bg-foreground/70 shadow-[0_0_8px_rgba(255,255,255,0.4)]"
-                  style={{
-                    animationName: "progress",
-                    animationDuration: `${SLIDE_DURATION}ms`,
-                    animationTimingFunction: "linear",
-                  }}
-                />
+                <div className="animate-progress absolute inset-y-0 left-0 rounded-full bg-foreground/70 shadow-[0_0_8px_rgba(255,255,255,0.4)] [animation-duration:6000ms] [animation-name:progress] [animation-timing-function:linear]" />
               )}
             </button>
           ))}
@@ -661,12 +665,11 @@ export function HomeHero({
                   });
                 }}
                 className={cn(
-                  "group/recent flex shrink-0 items-center gap-2.5 rounded-xl border bg-background/60 p-2 transition-all hover:-translate-y-0.5 hover:shadow-md sm:w-auto sm:flex-col sm:items-center sm:gap-1.5 sm:p-2.5 dark:bg-white/[0.02]",
+                  "group/recent flex min-w-[120px] shrink-0 items-center gap-2.5 rounded-xl border bg-background/60 p-2 transition-all hover:-translate-y-0.5 hover:shadow-md sm:w-auto sm:flex-col sm:items-center sm:gap-1.5 sm:p-2.5 dark:bg-white/[0.02]",
                   idx === 0
                     ? "border-orange-500/30 ring-1 ring-orange-500/15 hover:border-orange-500/50 dark:border-orange-500/30"
                     : "border-border/50 hover:border-foreground/25 dark:border-white/[0.07] dark:hover:border-white/[0.18]",
                 )}
-                style={{ minWidth: "120px" }}
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted/60 dark:bg-white/[0.04]">
                   <img

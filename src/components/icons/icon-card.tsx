@@ -70,7 +70,7 @@ export const IconCard = memo(function IconCard({
         categories: icon.categories,
       });
     },
-    [icon.variants.default, icon.slug, icon.title, icon.categories]
+    [icon.variants.default, icon.slug, icon.title, icon.categories, defaultCopyFormat]
   );
 
   const handleDownload = useCallback(
@@ -216,7 +216,7 @@ export const IconCard = memo(function IconCard({
       >
         {copied && (
           <span className="animate-fade-in-up rounded-lg bg-foreground/90 px-3 py-1.5 text-xs font-medium text-background shadow-lg backdrop-blur-sm">
-            Copied!
+            {FORMAT_BUTTONS.find((f) => f.value === defaultCopyFormat)?.label || defaultCopyFormat.toUpperCase()} copied!
           </span>
         )}
       </div>

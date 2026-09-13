@@ -241,6 +241,18 @@ html {
   animation: fade-in-up 0.3s ease-out both;
 }
 
+/* Search dropdown: a slightly lifted pop rather than a flat fade, entrance
+   only (exit is handled by the component toggling opacity/translate directly
+   so it can animate out before unmounting). */
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-dropdown-in {
+  animation: dropdown-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Carousel progress bar */
 @keyframes progress {
   from { width: 0%; }
@@ -253,12 +265,24 @@ html {
 
 /* Floating icon animation */
 @keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-8px) rotate(2deg); }
+  0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+  50% { transform: translateY(-11px) rotate(3deg) scale(1.05); }
 }
 
 .animate-float {
   animation: float 4s ease-in-out infinite;
+}
+
+/* Staggered entrance for floating hero logos when the slide/collection
+   changes, before the continuous float takes over. Transform + opacity
+   only, so it stays on the compositor thread. */
+@keyframes float-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.7); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-float-in {
+  animation: float-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 /* Slow ambient drift for the brand-color glow on icon detail pages - keeps
@@ -281,6 +305,19 @@ html {
 
 .animate-fade-in {
   animation: fade-in 0.5s ease-out both;
+}
+
+/* One-shot diagonal light sweep across the hero card on mount/slide change.
+   Transform + opacity only, so it stays on the compositor thread. */
+@keyframes hero-shimmer {
+  0% { transform: translateX(-120%) skewX(-20deg); opacity: 0; }
+  15% { opacity: 0.6; }
+  55% { opacity: 0.6; }
+  100% { transform: translateX(220%) skewX(-20deg); opacity: 0; }
+}
+
+.animate-hero-shimmer {
+  animation: hero-shimmer 2.2s ease-in-out both;
 }
 
 /* Subtle icon preview background (ensures visibility in both themes) */

@@ -260,7 +260,7 @@ export function IconFeedback({ slug, title }: Readonly<{ slug: string; title: st
       )}
     >
       {pickingReason && (
-        <div className="surface-glass flex flex-col gap-1 rounded-2xl border border-border/40 p-2 shadow-[0_12px_36px_-12px_rgba(0,0,0,0.45)] dark:border-white/[0.08]">
+        <div className="animate-fade-in-up surface-glass flex w-[min(200px,calc(100vw-2rem))] flex-col gap-1 rounded-2xl border border-border p-2 shadow-[0_16px_40px_-12px_rgba(0,0,0,0.5)] dark:border-white/[0.14]">
           <p className="px-1.5 pt-1 text-[11px] font-medium text-muted-foreground">
             What&apos;s wrong with it?
           </p>
@@ -284,7 +284,7 @@ export function IconFeedback({ slug, title }: Readonly<{ slug: string; title: st
           rel="noopener noreferrer"
           onClick={() => setShowReviewPrompt(false)}
           className={cn(
-            "surface-glass flex items-center gap-1.5 rounded-full border border-border/40 px-3 py-2 text-xs text-foreground shadow-[0_12px_36px_-12px_rgba(0,0,0,0.45)] transition-colors hover:bg-accent dark:border-white/[0.08]",
+            "surface-glass flex items-center gap-1.5 rounded-full border border-border px-3 py-2 text-xs text-foreground shadow-[0_16px_40px_-12px_rgba(0,0,0,0.5)] transition-colors hover:bg-accent dark:border-white/[0.14]",
             "transition-opacity duration-200 ease-out motion-reduce:transition-none",
             pillVisible ? "opacity-100" : "opacity-0",
           )}
@@ -294,7 +294,7 @@ export function IconFeedback({ slug, title }: Readonly<{ slug: string; title: st
         </a>
       )}
 
-      <div className="surface-glass flex items-center gap-2 rounded-full border border-border/40 px-3 py-2 shadow-[0_12px_36px_-12px_rgba(0,0,0,0.45),0_2px_8px_-2px_rgba(0,0,0,0.25)] dark:border-white/[0.08]">
+      <div className="surface-glass flex items-center gap-2 rounded-full border border-border px-3 py-2 shadow-[0_16px_40px_-12px_rgba(0,0,0,0.5),0_2px_8px_-2px_rgba(0,0,0,0.3)] dark:border-white/[0.14]">
         <span
           className={cn(
             "hidden text-xs text-muted-foreground transition-opacity duration-200 ease-out sm:inline",

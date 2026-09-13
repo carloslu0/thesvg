@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type ComponentType } from "react";
 import Link from "next/link";
 import posthog from "posthog-js";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowRight, ChevronDown, FileText, Menu, Moon, Package, Plus, Search, Sparkles, Sun, X } from "lucide-react";
+import { ArrowRight, Binary, Braces, ChevronDown, Component, FileCode, FileText, Link2, Menu, Moon, Package, Plus, Search, Sparkles, Sun, X } from "lucide-react";
 import { TheSVGMark } from "@/components/icons/the-svg-mark";
 import { useTheme } from "next-themes";
 import { useSettingsStore } from "@/lib/stores/settings-store";
@@ -12,7 +12,10 @@ import { FORMAT_BUTTONS } from "@/components/icons/shared/icon-constants";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Check } from "lucide-react";
@@ -28,6 +31,14 @@ import { cn } from "@/lib/utils";
 import { withUtm } from "@/lib/external-link";
 
 const PLACEHOLDER_BRANDS = ["GitHub", "Stripe", "Figma", "Docker", "AWS Lambda", "Azure Functions", "BigQuery", "Vercel", "React", "Tailwind CSS"];
+
+const COPY_FORMAT_ICONS: Record<string, ComponentType<{ className?: string }>> = {
+  svg: FileCode,
+  jsx: Braces,
+  vue: Component,
+  cdn: Link2,
+  "data-uri": Binary,
+};
 
 function SubmitButton() {
   return (
@@ -152,9 +163,29 @@ export function Header({ collectionCounts }: HeaderProps) {
   const isHome = pathname === "/";
 
   const [suggestions, setSuggestions] = useState<IconEntry[]>([]);
+  const [totalMatches, setTotalMatches] = useState(0);
   const [recentViewedIcons, setRecentViewedIcons] = useState<IconEntry[]>([]);
   const hasQuery = query.trim().length >= 2;
-  const showDropdown = focused && (hasQuery ? suggestions.length > 0 : true);
+  const showDropdown = focused;
+
+  // Keep the dropdown mounted briefly after showDropdown flips false so it
+  // can fade/scale out instead of vanishing instantly. Cheap (one timeout,
+  // opacity/transform only), not a real unmount-animation library. Mounting
+  // is adjusted directly during render (React's documented pattern for
+  // syncing derived state without an extra effect-triggered render);
+  // unmounting is the only part that needs a real effect, since it must
+  // wait out a timer.
+  const [dropdownMounted, setDropdownMounted] = useState(showDropdown);
+  const [prevShowDropdown, setPrevShowDropdown] = useState(showDropdown);
+  if (showDropdown !== prevShowDropdown) {
+    setPrevShowDropdown(showDropdown);
+    if (showDropdown) setDropdownMounted(true);
+  }
+  useEffect(() => {
+    if (showDropdown) return;
+    const id = window.setTimeout(() => setDropdownMounted(false), 150);
+    return () => window.clearTimeout(id);
+  }, [showDropdown]);
 
   // Persist real search intent to recents after the user pauses typing,
   // and fire the same debounce point to PostHog + GA so analytics show
@@ -201,22 +232,31 @@ export function Header({ collectionCounts }: HeaderProps) {
 
   const hasRecents = recentViewedIcons.length > 0 || recentSearches.length > 0;
 
-  // Functional updates so empty-query renders bail on Object.is.
+  // Functional updates so empty-query renders bail on Object.is. Debounced
+  // (180ms) so fast typing doesn't re-run Fuse on every keystroke.
   useEffect(() => {
     if (!hasQuery) {
       setSuggestions((prev) => (prev.length === 0 ? prev : []));
+      setTotalMatches((prev) => (prev === 0 ? prev : 0));
       setSelectedIdx((prev) => (prev === -1 ? prev : -1));
       return;
     }
     let active = true;
-    Promise.all([loadIconsManifest(), import("@/lib/search")]).then(([icons, { searchIcons }]) => {
-      if (!active) return;
-      setSuggestions(searchIcons(icons, query).slice(0, 6));
-      setSelectedIdx(-1);
-    }).catch(() => {
-      if (active) setSuggestions((prev) => (prev.length === 0 ? prev : []));
-    });
-    return () => { active = false; };
+    const id = window.setTimeout(() => {
+      Promise.all([loadIconsManifest(), import("@/lib/search")]).then(([icons, { searchIcons }]) => {
+        if (!active) return;
+        const matches = searchIcons(icons, query);
+        setSuggestions(matches.slice(0, 6));
+        setTotalMatches(matches.length);
+        setSelectedIdx(-1);
+      }).catch(() => {
+        if (active) {
+          setSuggestions((prev) => (prev.length === 0 ? prev : []));
+          setTotalMatches((prev) => (prev === 0 ? prev : 0));
+        }
+      });
+    }, 180);
+    return () => { active = false; window.clearTimeout(id); };
   }, [query, hasQuery]);
 
   // Close dropdown on click outside
@@ -397,53 +437,84 @@ export function Header({ collectionCounts }: HeaderProps) {
               </div>
             </div>
 
-            {/* Search dropdown - spans the input on mobile, capped at the
-                input width (max-w-xl) on sm+. */}
-            {showDropdown && (
+            {/* Search dropdown - spans the input on mobile, wider than the
+                input itself on sm+ for a more spacious, lifted panel.
+                Stays mounted ~150ms past showDropdown=false so it can fade
+                out instead of vanishing instantly. */}
+            {dropdownMounted && (
               <div
                 ref={dropdownRef}
                 id={listboxId}
-                className="absolute top-full right-0 left-0 z-50 mt-1.5 min-w-[min(420px,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-border/60 bg-background shadow-[0_16px_48px_-12px_rgba(0,0,0,0.25),0_4px_12px_-4px_rgba(0,0,0,0.15)] sm:mx-auto sm:max-w-2xl dark:border-white/[0.12] dark:bg-[#0f0f10] dark:shadow-[0_16px_48px_-12px_rgba(0,0,0,0.7),0_4px_12px_-4px_rgba(0,0,0,0.5)]"
+                className={`absolute top-full right-0 left-0 z-50 mt-1.5 min-w-[min(460px,calc(100vw-1.5rem))] origin-top overflow-hidden rounded-2xl border border-border/60 bg-background shadow-[0_24px_64px_-16px_rgba(0,0,0,0.3),0_8px_24px_-8px_rgba(0,0,0,0.15)] transition-all duration-150 sm:mx-auto sm:max-w-3xl dark:border-white/[0.12] dark:bg-[#0f0f10] dark:shadow-[0_24px_64px_-16px_rgba(0,0,0,0.75),0_8px_24px_-8px_rgba(0,0,0,0.5)] ${
+                  showDropdown ? "animate-dropdown-in" : "translate-y-1 scale-[0.98] opacity-0"
+                }`}
                 role="listbox"
               >
                 {hasQuery ? (
-                  /* Search results */
-                  <div className="px-2 py-1.5">
-                    <p className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/50">
-                      Results
-                    </p>
-                    {suggestions.map((icon, i) => (
-                      <button
-                        key={icon.slug}
-                        id={`${activeOptionId}-${i}`}
-                        type="button"
-                        role="option"
-                        aria-selected={i === selectedIdx}
-                        onMouseEnter={() => setSelectedIdx(i)}
-                        onClick={() => navigateToIcon(icon.slug)}
-                        className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors sm:gap-3 ${
-                          i === selectedIdx
-                            ? "bg-accent text-accent-foreground"
-                            : "text-foreground hover:bg-accent/50"
-                        }`}
+                  suggestions.length > 0 ? (
+                    /* Search results */
+                    <div className="px-2 py-1.5">
+                      <p className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/50">
+                        Results
+                      </p>
+                      {suggestions.map((icon, i) => (
+                        <button
+                          key={icon.slug}
+                          id={`${activeOptionId}-${i}`}
+                          type="button"
+                          role="option"
+                          aria-selected={i === selectedIdx}
+                          onMouseEnter={() => setSelectedIdx(i)}
+                          onClick={() => navigateToIcon(icon.slug)}
+                          className={`group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition-all duration-150 sm:gap-3 ${
+                            i === selectedIdx
+                              ? "translate-x-0.5 bg-accent text-accent-foreground"
+                              : "text-foreground hover:translate-x-0.5 hover:bg-accent/50"
+                          }`}
+                        >
+                          <img
+                            src={icon.variants.default}
+                            alt=""
+                            className="h-6 w-6 shrink-0 rounded object-contain transition-transform duration-150 group-hover:scale-110"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">{icon.title}</p>
+                            <p className="truncate text-[11px] text-muted-foreground">
+                              {icon.categories[0] || icon.slug}
+                            </p>
+                          </div>
+                          <span className="hidden shrink-0 text-[10px] text-muted-foreground/50 sm:inline">
+                            {icon.slug}
+                          </span>
+                        </button>
+                      ))}
+                      {totalMatches > suggestions.length && (
+                        <Link
+                          href={`/?q=${encodeURIComponent(query)}`}
+                          onClick={() => setFocused(false)}
+                          className="flex items-center justify-center gap-1 rounded-lg px-2 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+                        >
+                          View all {totalMatches.toLocaleString()} results
+                          <ArrowRight className="h-3 w-3" />
+                        </Link>
+                      )}
+                    </div>
+                  ) : (
+                    /* No matches */
+                    <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
+                      <Search className="h-5 w-5 text-muted-foreground/30" />
+                      <p className="text-sm text-muted-foreground">
+                        No icons match &ldquo;{query.trim()}&rdquo;
+                      </p>
+                      <Link
+                        href="/submit"
+                        onClick={() => setFocused(false)}
+                        className="text-xs font-medium text-orange-600 hover:underline dark:text-orange-400"
                       >
-                        <img
-                          src={icon.variants.default}
-                          alt=""
-                          className="h-6 w-6 shrink-0 rounded object-contain"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{icon.title}</p>
-                          <p className="truncate text-[11px] text-muted-foreground">
-                            {icon.categories[0] || icon.slug}
-                          </p>
-                        </div>
-                        <span className="hidden shrink-0 text-[10px] text-muted-foreground/50 sm:inline">
-                          {icon.slug}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                        Submit this icon
+                      </Link>
+                    </div>
+                  )
                 ) : (
                   /* Quick links when focused with no query */
                   <div className="px-2 py-2">
@@ -535,7 +606,7 @@ export function Header({ collectionCounts }: HeaderProps) {
                           key={meta.id}
                           href={`/collection/${meta.id}`}
                           onClick={() => setFocused(false)}
-                          className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-accent/50"
+                          className="group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-all duration-150 hover:translate-x-0.5 hover:bg-accent/50"
                         >
                           <meta.icon className={`h-4 w-4 shrink-0 ${meta.color}`} />
                           <span className="flex-1 text-sm font-medium text-foreground">{meta.label}</span>
@@ -559,7 +630,7 @@ export function Header({ collectionCounts }: HeaderProps) {
                         key={item.href}
                         href={item.href}
                         onClick={() => setFocused(false)}
-                        className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-accent/50"
+                        className="group flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-all duration-150 hover:translate-x-0.5 hover:bg-accent/50"
                       >
                         <item.icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
                         <span className="flex-1 text-xs text-muted-foreground hover:text-foreground">{item.label}</span>
@@ -594,8 +665,12 @@ export function Header({ collectionCounts }: HeaderProps) {
           <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:ml-0 sm:gap-1">
             <Link
               href="/extensions"
-              className="hidden items-center rounded-lg px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground lg:inline-flex"
+              className={cn(
+                "hidden h-8 items-center gap-1.5 rounded-lg border border-border/50 px-2.5 text-xs font-medium text-muted-foreground transition-all duration-200 hover:border-foreground/20 hover:bg-accent hover:text-foreground lg:inline-flex dark:border-white/[0.08] dark:hover:border-white/20 dark:hover:bg-white/[0.06]",
+                pathname === "/extensions" && "border-foreground/20 bg-accent text-foreground dark:border-white/20 dark:bg-white/[0.06]"
+              )}
             >
+              <Package className="h-3.5 w-3.5" />
               Extensions
             </Link>
 
@@ -692,29 +767,54 @@ export function Header({ collectionCounts }: HeaderProps) {
                 />
               </a>
               <DropdownMenu>
-                <DropdownMenuTrigger>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-auto gap-1 px-2 sm:h-8 text-muted-foreground hover:text-foreground"
-                    aria-label="Default copy format"
-                    title="Default Copy Format"
-                  >
-                    <span className="text-[10px] uppercase font-bold">{FORMAT_BUTTONS.find(f => f.value === defaultCopyFormat)?.label || defaultCopyFormat}</span>
-                    <ChevronDown className="h-3 w-3 opacity-60" />
-                  </Button>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-auto gap-1 px-2 sm:h-8 text-muted-foreground hover:text-foreground"
+                      aria-label="Default copy format"
+                      title="Default Copy Format"
+                    />
+                  }
+                >
+                  <span className="text-[10px] uppercase font-bold">{FORMAT_BUTTONS.find(f => f.value === defaultCopyFormat)?.label || defaultCopyFormat}</span>
+                  <ChevronDown className="h-3 w-3 opacity-60" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {FORMAT_BUTTONS.map((fmt) => (
-                    <DropdownMenuItem
-                      key={fmt.value}
-                      onClick={() => setDefaultCopyFormat(fmt.value)}
-                      className="flex items-center justify-between"
-                    >
-                      {fmt.label}
-                      {defaultCopyFormat === fmt.value && <Check className="h-4 w-4" />}
-                    </DropdownMenuItem>
-                  ))}
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="font-normal">
+                      <p className="text-xs font-semibold text-foreground">Default copy format</p>
+                      <p className="mt-0.5 text-[11px] font-normal text-muted-foreground">
+                        Used when you click the copy button on any icon card
+                      </p>
+                    </DropdownMenuLabel>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    {FORMAT_BUTTONS.map((fmt) => {
+                      const FormatIcon = COPY_FORMAT_ICONS[fmt.value];
+                      const isActive = defaultCopyFormat === fmt.value;
+                      return (
+                        <DropdownMenuItem
+                          key={fmt.value}
+                          onClick={() => setDefaultCopyFormat(fmt.value)}
+                          className="items-start gap-2.5 py-2"
+                        >
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground">
+                            <FormatIcon className="h-3.5 w-3.5" />
+                          </span>
+                          <span className="flex flex-1 flex-col gap-0.5">
+                            <span className="text-xs font-medium text-foreground">{fmt.label}</span>
+                            <span className="text-[10px] leading-relaxed text-muted-foreground/70">
+                              {fmt.description}
+                            </span>
+                          </span>
+                          {isActive && <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" />}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button
