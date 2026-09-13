@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/json-ld";
-import { Suspense } from "react";
+import { BrowseSuspense } from "@/components/skeletons";
 import { notFound } from "next/navigation";
 import {
   getCategoryCounts,
@@ -101,7 +101,7 @@ export default async function CollectionPage({ params }: PageProps) {
   return (
     <>
       <JsonLd data={jsonLd} />
-      <Suspense>
+      <BrowseSuspense>
         <HomeContent
           categoryCounts={categoryCounts}
           count={iconCount}
@@ -109,7 +109,7 @@ export default async function CollectionPage({ params }: PageProps) {
           collections={collections}
           defaultCollection={collectionName}
         />
-      </Suspense>
+      </BrowseSuspense>
     </>
   );
 }

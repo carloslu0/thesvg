@@ -12,20 +12,43 @@ import type { IconEntry } from "@/lib/icons";
 let cachedIcons: IconEntry[] | null = null;
 let fetchPromise: Promise<IconEntry[]> | null = null;
 
+// A browser never rejects a stalled fetch on its own, so without a deadline the
+// manifest load can hang forever and the caller's error state never shows. Abort
+// each attempt after its deadline. The retry gets a shorter deadline so a
+// transient stall still recovers while a persistent one fails fast.
+const FETCH_TIMEOUT_MS = 20000;
+const RETRY_TIMEOUT_MS = 10000;
+
+async function fetchManifestOnce(timeoutMs: number): Promise<IconEntry[]> {
+  const controller = new AbortController();
+  // The timer covers both the response headers and the body download, because
+  // the abort signal cancels the whole request until json() resolves.
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch("/api/icons-full.json", { signal: controller.signal });
+    if (res.ok) {
+      return (await res.json()) as IconEntry[];
+    }
+
+    // Dev fallback: `pnpm dev` doesn't run generate-api.ts, so /api/icons-full.json
+    // may 404. Fall back to the source-of-truth manifest at build-time only.
+    if (process.env.NODE_ENV !== "production") {
+      const mod = await import("@/data/icons.json");
+      return mod.default as IconEntry[];
+    }
+
+    throw new Error(`Failed to load icons manifest: ${res.status}`);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchManifest(): Promise<IconEntry[]> {
-  const res = await fetch("/api/icons-full.json");
-  if (res.ok) {
-    return res.json() as Promise<IconEntry[]>;
+  try {
+    return await fetchManifestOnce(FETCH_TIMEOUT_MS);
+  } catch {
+    return await fetchManifestOnce(RETRY_TIMEOUT_MS);
   }
-
-  // Dev fallback: `pnpm dev` doesn't run generate-api.ts, so /api/icons-full.json
-  // may 404. Fall back to the source-of-truth manifest at build-time only.
-  if (process.env.NODE_ENV !== "production") {
-    const mod = await import("@/data/icons.json");
-    return mod.default as IconEntry[];
-  }
-
-  throw new Error(`Failed to load icons manifest: ${res.status}`);
 }
 
 export async function loadIconsManifest(): Promise<IconEntry[]> {

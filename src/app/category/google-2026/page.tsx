@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/json-ld";
-import { Suspense } from "react";
 import { getCategoryCounts, getIconsByCategory } from "@/lib/icons";
 import { SidebarShell } from "@/components/layout/sidebar-shell";
 import { Google2026Landing } from "@/components/landing/google-2026-landing";
+import { BrowseSuspense } from "@/components/skeletons";
 
 const CDN_BASE = "https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons";
 const CATEGORY = "Google 2026";
@@ -115,11 +115,11 @@ export default function Google2026CategoryPage() {
   return (
     <>
       <JsonLd data={jsonLd} />
-      <Suspense>
+      <BrowseSuspense>
         <SidebarShell categoryCounts={categoryCounts}>
           <Google2026Landing icons={icons} />
         </SidebarShell>
-      </Suspense>
+      </BrowseSuspense>
     </>
   );
 }

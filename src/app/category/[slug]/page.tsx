@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/json-ld";
-import { Suspense } from "react";
+import { BrowseSuspense } from "@/components/skeletons";
 import { notFound } from "next/navigation";
 import {
   getAllCategories,
@@ -113,7 +113,7 @@ export default async function CategoryPage({ params }: PageProps) {
   return (
     <>
       <JsonLd data={jsonLd} />
-      <Suspense>
+      <BrowseSuspense>
         <HomeContent
           categoryCounts={categoryCounts}
           count={iconCount}
@@ -122,7 +122,7 @@ export default async function CategoryPage({ params }: PageProps) {
           defaultCategory={category}
           defaultCategorySlug={slug}
         />
-      </Suspense>
+      </BrowseSuspense>
     </>
   );
 }

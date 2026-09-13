@@ -9,6 +9,7 @@ import { ScrollToTop } from "@/components/scroll-to-top";
 import { MobileShell } from "@/components/mobile/mobile-shell";
 import { NotificationToasts } from "@/components/notification-toasts";
 import { StoreHydration } from "@/components/store-hydration";
+import { HeaderSkeleton, MobileHeaderSkeleton, ContentSkeleton } from "@/components/skeletons";
 import { getFormattedIconCount, getCollections } from "@/lib/icons";
 import postsData from "@/data/posts.json";
 import "./globals.css";
@@ -163,10 +164,17 @@ export default function RootLayout({
               block tall enough for it to stick against the viewport.
               Below `lg` the MobileShell renders its own top bar + bottom
               dock to deliver an app-like feel. */}
-          <Suspense>
+          <Suspense fallback={<HeaderSkeleton />}>
             <Header collectionCounts={collectionCounts} />
           </Suspense>
-          <Suspense>
+          <Suspense
+            fallback={
+              <>
+                <MobileHeaderSkeleton />
+                <ContentSkeleton />
+              </>
+            }
+          >
             <MobileShell>
               <main className="min-h-[calc(100dvh-3rem)] lg:min-h-[calc(100dvh-3.75rem)]">
                 {children}
