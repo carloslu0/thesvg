@@ -171,16 +171,21 @@ function resolveIconPageData(icon: NonNullable<ReturnType<typeof getIconBySlug>>
   } else {
     // Scan the full icon list for any slug-YYYY counterpart rather than
     // assuming a fixed year window, so newly-bundled refresh icons are
-    // always picked up regardless of the build year.
-    const allSlugs = new Set(getAllIcons().map((i) => i.slug));
+    // always picked up regardless of the build year. Iterates the icons
+    // array directly (no intermediate Set of slugs) and checks the year
+    // string's length before running the regex, to avoid the allocation
+    // and CPU overhead of doing this per-icon-page-view at scale.
+    const allIcons = getAllIcons();
     const prefix = `${icon.slug}-`;
     let latest: { slug: string; year: number } | null = null;
-    for (const s of allSlugs) {
+    for (const i of allIcons) {
+      const s = i.slug;
       if (!s.startsWith(prefix)) continue;
       const yearStr = s.slice(prefix.length);
-      if (!/^\d{4}$/.test(yearStr)) continue;
-      const year = parseInt(yearStr, 10);
-      if (!latest || year > latest.year) latest = { slug: s, year };
+      if (yearStr.length === 4 && /^\d{4}$/.test(yearStr)) {
+        const year = parseInt(yearStr, 10);
+        if (!latest || year > latest.year) latest = { slug: s, year };
+      }
     }
     if (latest) {
       versionCounterpartSlug = latest.slug;
