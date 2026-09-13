@@ -1,10 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
 import { ArrowUpRight, RotateCcw, ThumbsDown, ThumbsUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { withUtm } from "@/lib/external-link";
+import { usePrefersReducedMotion } from "@/lib/hooks/use-media-query";
+
+// Presentation-only timing for the label/pill fade sequence below. Kept in
+// sync with the `duration-200` Tailwind class used on both elements so the
+// "next tick" flips genuinely land after the fade-out has painted.
+const FADE_MS = 200;
+const HOLD_MS = 1000;
 
 type Sentiment = "up" | "down";
 type Tally = { up: number; down: number };
@@ -81,15 +88,70 @@ function buildFeedbackIssueUrl(slug: string, title: string, reason: Reason): str
  * link, the positive-sentiment equivalent.
  */
 export function IconFeedback({ slug, title }: Readonly<{ slug: string; title: string }>) {
+  const prefersReducedMotion = usePrefersReducedMotion();
+
   const [voted, setVoted] = useState<Sentiment | null>(null);
   const [tally, setTally] = useState<Tally | null>(null);
   const [pickingReason, setPickingReason] = useState(false);
   const [reasonPicked, setReasonPicked] = useState<Reason | null>(null);
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
 
+  // Presentation-only sequencing state, layered on top of the vote state
+  // machine above. `displayedLabel`/`labelVisible` control what text the
+  // status label shows and whether it's faded in or out; `pillVisible`
+  // does the same for the review-prompt pill once it mounts. None of this
+  // feeds back into the capture logic - it only decides when things fade.
+  const [displayedLabel, setDisplayedLabel] = useState("Helpful?");
+  const [labelVisible, setLabelVisible] = useState(true);
+  const [pillVisible, setPillVisible] = useState(false);
+
+  const timersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+    };
+  }, []);
+
+  function schedule(fn: () => void, delayMs: number) {
+    const id = setTimeout(() => {
+      timersRef.current = timersRef.current.filter((t) => t !== id);
+      fn();
+    }, delayMs);
+    timersRef.current.push(id);
+  }
+
+  function clearScheduled() {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+  }
+
+  // Fades the status label to a new resting piece of text. Reduced-motion
+  // users get the end state immediately, no transition, no delay.
+  function showLabel(text: string) {
+    if (prefersReducedMotion) {
+      setDisplayedLabel(text);
+      setLabelVisible(true);
+      return;
+    }
+    setDisplayedLabel(text);
+    setLabelVisible(false);
+    // Flip to visible on the next tick so the "hidden" paint commits first -
+    // otherwise React batches both writes into one frame and the browser
+    // never actually sees an opacity change to transition.
+    schedule(() => setLabelVisible(true), 20);
+  }
+
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setVoted(window.localStorage.getItem(storageKey(slug)) as Sentiment | null);
+    const stored = window.localStorage.getItem(storageKey(slug)) as Sentiment | null;
+    setVoted(stored);
+    // Restoring a prior vote on load is not a fresh interaction - show the
+    // resting label immediately, no "arrival" fade for state that already
+    // existed before this render.
+    setDisplayedLabel(stored ? "Thanks!" : "Helpful?");
+    setLabelVisible(true);
   }, [slug]);
 
   // Best-effort read of the last cron-generated stats snapshot. The file
@@ -128,21 +190,46 @@ export function IconFeedback({ slug, title }: Readonly<{ slug: string; title: st
 
     if (sentiment === "down") {
       setPickingReason(true);
+      showLabel("Thanks!");
       return;
     }
 
-    if (typeof window !== "undefined" && !window.localStorage.getItem(REVIEW_PROMPTED_KEY)) {
+    const reviewPromptPending =
+      typeof window !== "undefined" && !window.localStorage.getItem(REVIEW_PROMPTED_KEY);
+    if (reviewPromptPending) {
       window.localStorage.setItem(REVIEW_PROMPTED_KEY, "1");
-      setShowReviewPrompt(true);
     }
+
+    showLabel("Thanks!");
+
+    if (!reviewPromptPending) return;
+
+    if (prefersReducedMotion) {
+      setShowReviewPrompt(true);
+      setPillVisible(true);
+      return;
+    }
+
+    // Hold on "Thanks!" long enough to read it, then hand off to the review
+    // pill instead of leaving both static and visible at once.
+    schedule(() => {
+      setLabelVisible(false); // fade "Thanks!" out
+      schedule(() => {
+        setShowReviewPrompt(true);
+        setPillVisible(false);
+        schedule(() => setPillVisible(true), 20); // fade the pill in next tick
+      }, FADE_MS);
+    }, HOLD_MS);
   }
 
   function pickReason(reason: Reason) {
+    if (reasonPicked) return;
     posthog.capture("icon_feedback_reason", { slug, reason, source: "detail_page" });
     gaFeedback(slug, "down", reason);
     setReasonPicked(reason);
     setPickingReason(false);
     window.open(withUtm(buildFeedbackIssueUrl(slug, title, reason), "icon_feedback"), "_blank", "noopener,noreferrer");
+    showLabel("Thanks - opened an issue");
   }
 
   // Reset doesn't (and can't, without a backend) retract the original
@@ -156,12 +243,14 @@ export function IconFeedback({ slug, title }: Readonly<{ slug: string; title: st
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(storageKey(slug));
     }
+    clearScheduled();
     setVoted(null);
     setReasonPicked(null);
     setPickingReason(false);
+    setDisplayedLabel("Helpful?");
+    setLabelVisible(true);
+    setPillVisible(false);
   }
-
-  const statusLabel = reasonPicked ? "Thanks - opened an issue" : voted ? "Thanks!" : "Helpful?";
 
   return (
     <div
@@ -194,7 +283,11 @@ export function IconFeedback({ slug, title }: Readonly<{ slug: string; title: st
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => setShowReviewPrompt(false)}
-          className="surface-glass flex items-center gap-1.5 rounded-full border border-border/40 px-3 py-2 text-xs text-foreground shadow-[0_12px_36px_-12px_rgba(0,0,0,0.45)] transition-colors hover:bg-accent dark:border-white/[0.08]"
+          className={cn(
+            "surface-glass flex items-center gap-1.5 rounded-full border border-border/40 px-3 py-2 text-xs text-foreground shadow-[0_12px_36px_-12px_rgba(0,0,0,0.45)] transition-colors hover:bg-accent dark:border-white/[0.08]",
+            "transition-opacity duration-200 ease-out motion-reduce:transition-none",
+            pillVisible ? "opacity-100" : "opacity-0",
+          )}
         >
           Glad it helped - leave a review?
           <ArrowUpRight className="h-3 w-3 opacity-60" />
@@ -202,8 +295,14 @@ export function IconFeedback({ slug, title }: Readonly<{ slug: string; title: st
       )}
 
       <div className="surface-glass flex items-center gap-2 rounded-full border border-border/40 px-3 py-2 shadow-[0_12px_36px_-12px_rgba(0,0,0,0.45),0_2px_8px_-2px_rgba(0,0,0,0.25)] dark:border-white/[0.08]">
-        <span className="hidden text-xs text-muted-foreground sm:inline">
-          {statusLabel}
+        <span
+          className={cn(
+            "hidden text-xs text-muted-foreground transition-opacity duration-200 ease-out sm:inline",
+            "motion-reduce:transition-none",
+            labelVisible ? "opacity-100" : "opacity-0",
+          )}
+        >
+          {displayedLabel}
         </span>
         {voted !== null && !pickingReason && (
           <button
