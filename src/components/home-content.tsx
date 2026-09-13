@@ -61,6 +61,7 @@ export function HomeContent({ categoryCounts, count, recentIcons, collections, d
   const viewParam = (searchParams.get("view") || "comfortable") as "compact" | "comfortable";
   const favoritesParam = searchParams.get("favorites") === "true";
   const collectionParam = (searchParams.get("collection") || defaultCollection || null) as Collection | null;
+  const catSearchParam = searchParams.get("catSearch") || "";
 
   const query = globalQuery;
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -158,6 +159,14 @@ export function HomeContent({ categoryCounts, count, recentIcons, collections, d
     setSidebarOpen(false);
   }, [updateUrl, favoritesParam, setSidebarOpen]);
 
+  // Already debounced (400ms) by Sidebar itself before this fires.
+  const handleCategorySearchChange = useCallback(
+    (value: string) => {
+      updateUrl({ catSearch: value || null });
+    },
+    [updateUrl]
+  );
+
   const handleSortCycle = useCallback(() => {
     const current = sortParam || "default";
     const idx = SORT_OPTIONS.indexOf(current as typeof SORT_OPTIONS[number]);
@@ -192,7 +201,7 @@ export function HomeContent({ categoryCounts, count, recentIcons, collections, d
   }, [collectionParam, collectionIcons, categoryCounts]);
 
   const [filtered, setFiltered] = useState<IconEntry[]>([]);
-  const filterKey = `${query}|${categoryParam ?? ""}|${sortParam ?? ""}|${favoritesParam}|${collectionParam ?? ""}`;
+  const filterKey = `${query}|${categoryParam ?? ""}|${sortParam ?? ""}|${favoritesParam}|${collectionParam ?? ""}|${catSearchParam}`;
 
   // Apply favorites + category filters here so the array identity only changes
   // when those filters change (not on every keystroke). This lets the Fuse
@@ -209,8 +218,14 @@ export function HomeContent({ categoryCounts, count, recentIcons, collections, d
         icon.categories.some((c) => c.toLowerCase() === lowerCatParam)
       );
     }
+    if (catSearchParam.trim()) {
+      const lowerCatSearch = catSearchParam.trim().toLowerCase();
+      r = r.filter((icon) =>
+        icon.categories.some((c) => c.toLowerCase().includes(lowerCatSearch))
+      );
+    }
     return r;
-  }, [collectionIcons, favoritesParam, favorites, categoryParam]);
+  }, [collectionIcons, favoritesParam, favorites, categoryParam, catSearchParam]);
 
   // Clear a prior manifest load failure when filters change so the load effect
   // above can re-attempt the fetch (recovers from a transient network error
@@ -285,6 +300,7 @@ export function HomeContent({ categoryCounts, count, recentIcons, collections, d
       collections={collections}
       selectedCollection={collectionParam}
       onCollectionSelect={handleCollectionSelect}
+      onCategorySearchChange={handleCategorySearchChange}
     />
   );
 
@@ -308,6 +324,7 @@ export function HomeContent({ categoryCounts, count, recentIcons, collections, d
             collections={collections}
             selectedCollection={collectionParam}
             onCollectionSelect={handleCollectionSelect}
+            onCategorySearchChange={handleCategorySearchChange}
           />
         </SheetContent>
       </Sheet>

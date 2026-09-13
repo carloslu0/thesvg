@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Blocks,
   Bot,
+  Check,
   ChevronRight,
   Code,
   Code2,
@@ -14,18 +15,24 @@ import {
   Package,
   Palette,
   Plus,
+  Search,
   Shapes,
   Sparkles,
   Terminal,
   Share,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Collection } from "@/lib/icons";
 import { COLLECTIONS_META } from "@/lib/collections-meta";
+import { categoryAccentClass, filterCategories, groupCategoriesByLetter } from "@/lib/category-index";
+import { AlphabetRail } from "@/components/layout/alphabet-rail";
 
 import { cn } from "@/lib/utils";
+
+const CATEGORY_SEARCH_DEBOUNCE_MS = 400;
 
 const EXTENSION_CATEGORIES = [
   { id: "npm", label: "Libraries & SDKs", icon: Package },
@@ -48,6 +55,11 @@ interface SidebarProps {
   collections: { name: Collection; count: number }[];
   selectedCollection: Collection | null;
   onCollectionSelect: (collection: Collection | null) => void;
+  /** Debounced (400ms) live category-name search, also used to filter the
+   * main icon grid on pages that have one. Optional: pages without a grid
+   * (categories, blog, etc.) can omit this and the search just filters the
+   * list shown here. */
+  onCategorySearchChange?: (value: string) => void;
 }
 
 export function Sidebar({
@@ -61,15 +73,49 @@ export function Sidebar({
   collections,
   selectedCollection,
   onCollectionSelect,
+  onCategorySearchChange,
 }: SidebarProps) {
   const pathname = usePathname();
   const isExtensionsPage = pathname === "/extensions";
   const [extensionsExpanded, setExtensionsExpanded] = useState(isExtensionsPage);
-  const [collectionsExpanded, setCollectionsExpanded] = useState(true);
-  const [featuredExpanded, setFeaturedExpanded] = useState(true);
+  const [collectionsExpanded, setCollectionsExpanded] = useState(false);
+  const [featuredExpanded, setFeaturedExpanded] = useState(false);
+  const [favoritesShareCopied, setFavoritesShareCopied] = useState(false);
   const isFavoritesActive = showFavorites;
   const isAllIconsActive =
     !selectedCategory && !showFavorites && !selectedCollection && pathname === "/";
+
+  const [categorySearch, setCategorySearch] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const letterHeaderRefs = useRef(new Map<string, HTMLDivElement>());
+
+  useEffect(() => {
+    if (!onCategorySearchChange) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      onCategorySearchChange(categorySearch);
+    }, CATEGORY_SEARCH_DEBOUNCE_MS);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [categorySearch, onCategorySearchChange]);
+
+  const filteredCategories = useMemo(
+    () => filterCategories(categories, categorySearch),
+    [categories, categorySearch],
+  );
+  const categoryGroups = useMemo(
+    () => groupCategoriesByLetter(filteredCategories),
+    [filteredCategories],
+  );
+  const availableLetters = useMemo(
+    () => new Set(categoryGroups.map((g) => g.letter)),
+    [categoryGroups],
+  );
+
+  const jumpToLetter = useCallback((letter: string) => {
+    letterHeaderRefs.current.get(letter)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   const navItemClass =
     "group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-accent/80 hover:text-accent-foreground";
@@ -103,45 +149,52 @@ export function Sidebar({
           Categories
         </Link>
 
-        <button
-          type="button"
-          onClick={onToggleFavorites}
-          className={cn(navItemClass, isFavoritesActive && activeClass)}
-        >
-          <Heart className={cn("h-4 w-4 shrink-0 transition-all duration-200 group-hover:scale-110", isFavoritesActive && "fill-red-500 text-red-500")} />
-          <span className="flex-1 text-left">Favorites</span>
-          {favoriteCount > 0 && (
-            <div className="flex items-center">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={onToggleFavorites}
+            className={cn(navItemClass, favoriteCount > 0 && "pr-9", isFavoritesActive && activeClass)}
+          >
+            <Heart className={cn("h-4 w-4 shrink-0 transition-all duration-200 group-hover:scale-110", isFavoritesActive && "fill-red-500 text-red-500")} />
+            <span className="flex-1 text-left">Favorites</span>
+            {favoriteCount > 0 && (
               <span className="rounded-full bg-red-500/10 px-1.5 font-mono text-[10px] font-semibold text-red-500 dark:bg-red-500/15">
                 {favoriteCount}
               </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const favs = localStorage.getItem("thesvg-favorites");
-                  if (favs) {
-                    try {
-                      const parsed = JSON.parse(favs);
-                      if (parsed.state && parsed.state.favorites) {
-                        const url = new URL(window.location.href);
-                        url.searchParams.set("favorites_list", parsed.state.favorites.join(","));
-                        navigator.clipboard.writeText(url.toString());
-                        const btn = e.currentTarget;
-                        const originalHTML = btn.innerHTML;
-                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3 text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-                        setTimeout(() => { btn.innerHTML = originalHTML; }, 1500);
-                      }
-                    } catch(_err) {}
+            )}
+          </button>
+          {/* Sibling, not nested inside the toggle button above (a <button>
+              can't contain another <button> without breaking HTML/hydration). */}
+          {favoriteCount > 0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                const favs = localStorage.getItem("thesvg-favorites");
+                if (!favs) return;
+                try {
+                  const parsed = JSON.parse(favs);
+                  if (parsed.state && parsed.state.favorites) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("favorites_list", parsed.state.favorites.join(","));
+                    navigator.clipboard.writeText(url.toString());
+                    setFavoritesShareCopied(true);
+                    setTimeout(() => setFavoritesShareCopied(false), 1500);
                   }
-                }}
-                title="Share Favorites"
-                className="ml-2 flex h-5 w-5 items-center justify-center rounded-md hover:bg-accent hover:text-foreground"
-              >
+                } catch { /* malformed localStorage value, nothing to share */ }
+              }}
+              title="Share Favorites"
+              aria-label="Copy a shareable link to your favorites"
+              className="absolute top-1/2 right-3 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground/70 hover:bg-accent hover:text-foreground"
+            >
+              {favoritesShareCopied ? (
+                <Check className="h-3 w-3 text-green-500" />
+              ) : (
                 <Share className="h-3 w-3" />
-              </button>
-            </div>
+              )}
+            </button>
           )}
-        </button>
+        </div>
 
         {/* Extensions - expandable */}
         <div>
@@ -229,7 +282,7 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={() => setCollectionsExpanded((prev) => !prev)}
-                className="flex w-full items-center justify-between rounded-lg px-1 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 transition-colors hover:text-muted-foreground/80"
+                className="flex w-full items-center justify-between rounded-lg px-1 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 transition-colors hover:text-foreground"
               >
                 Collections
                 <ChevronRight
@@ -279,7 +332,7 @@ export function Sidebar({
             <button
               type="button"
               onClick={() => setFeaturedExpanded((prev) => !prev)}
-              className="flex w-full items-center justify-between rounded-lg px-1 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 transition-colors hover:text-muted-foreground/80"
+              className="flex w-full items-center justify-between rounded-lg px-1 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 transition-colors hover:text-foreground"
             >
               Featured
               <ChevronRight
@@ -315,28 +368,109 @@ export function Sidebar({
 
           {/* Categories */}
           <div className="mt-2 h-px bg-gradient-to-r from-transparent via-border/60 to-transparent dark:via-white/[0.06]" />
-          <p className="px-1 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
-            Categories
-          </p>
-          <div className="flex flex-col gap-px">
-            {categories.map((category) => (
+          <div className="flex items-baseline justify-between px-1 pt-3 pb-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+              Categories
+            </p>
+            {categorySearch && (
+              <span className="font-mono text-[10px] text-muted-foreground/40">
+                {filteredCategories.length}
+              </span>
+            )}
+          </div>
+          <div className="relative mb-2 flex items-center">
+            <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-muted-foreground/40" />
+            <input
+              type="text"
+              value={categorySearch}
+              onChange={(e) => setCategorySearch(e.target.value)}
+              placeholder="Search categories"
+              aria-label="Search categories"
+              className="w-full rounded-lg border border-border/50 bg-muted/30 py-1.5 pr-7 pl-8 text-xs text-foreground placeholder:text-muted-foreground/50 outline-none transition-shadow duration-200 focus:border-foreground/30 focus:bg-background focus:shadow-[0_0_0_3px_rgba(0,0,0,0.05)] dark:border-white/[0.06] dark:bg-white/[0.02] dark:focus:border-white/20 dark:focus:shadow-[0_0_0_3px_rgba(255,255,255,0.06)]"
+            />
+            {categorySearch && (
               <button
-                key={category.name}
                 type="button"
-                onClick={() => onCategorySelect(category.name)}
-                className={cn(
-                  "group flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-[13px] transition-all duration-200 hover:bg-accent/60 hover:text-accent-foreground dark:hover:bg-white/[0.05]",
-                  selectedCategory === category.name &&
-                    !showFavorites &&
-                    activeClass
-                )}
+                onClick={() => setCategorySearch("")}
+                aria-label="Clear category search"
+                className="absolute right-2 flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground/50 transition-colors hover:bg-accent hover:text-foreground"
               >
-                <span className="truncate">{category.name}</span>
-                <span className="ml-2 shrink-0 rounded-full bg-muted/50 px-1.5 font-mono text-[10px] text-muted-foreground/50 transition-colors group-hover:bg-muted/80 group-hover:text-muted-foreground/70 dark:bg-white/[0.03] dark:group-hover:bg-white/[0.06]">
-                  {category.count}
-                </span>
+                <X className="h-3 w-3" />
               </button>
-            ))}
+            )}
+          </div>
+          {categorySearch && (
+            <p role="status" aria-live="polite" className="sr-only">
+              {filteredCategories.length === 0
+                ? `No categories match ${categorySearch}`
+                : `${filteredCategories.length} ${filteredCategories.length === 1 ? "category" : "categories"} found`}
+            </p>
+          )}
+          <div className="flex items-start">
+            <div className="flex min-w-0 flex-1 flex-col gap-px">
+              {categoryGroups.length === 0 && (
+                <div className="flex flex-col items-center gap-2 px-2 py-6 text-center">
+                  <Search className="h-4 w-4 text-muted-foreground/30" />
+                  <p className="text-[12px] text-muted-foreground/50">
+                    No categories match &ldquo;{categorySearch}&rdquo;
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setCategorySearch("")}
+                    className="text-[11px] font-medium text-orange-600 hover:underline dark:text-orange-400"
+                  >
+                    Clear search
+                  </button>
+                </div>
+              )}
+              {categoryGroups.map((group) => (
+                <div key={group.letter}>
+                  <div
+                    ref={(el) => {
+                      if (el) letterHeaderRefs.current.set(group.letter, el);
+                      else letterHeaderRefs.current.delete(group.letter);
+                    }}
+                    className="sticky top-0 z-10 -mx-1 border-b border-border/30 bg-background/95 px-2 py-1 text-[10px] font-bold tracking-wide text-muted-foreground/60 backdrop-blur-sm dark:border-white/[0.05] dark:bg-black/70"
+                  >
+                    {group.letter}
+                  </div>
+                  {group.categories.map((category) => (
+                    <button
+                      key={category.name}
+                      type="button"
+                      onClick={() => onCategorySelect(category.name)}
+                      className={cn(
+                        "group flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-[13px] transition-all duration-200 hover:translate-x-0.5 hover:bg-accent/60 hover:text-accent-foreground dark:hover:bg-white/[0.05]",
+                        selectedCategory === category.name &&
+                          !showFavorites &&
+                          activeClass
+                      )}
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "h-1.5 w-1.5 shrink-0 rounded-full opacity-60 transition-opacity group-hover:opacity-100",
+                            categoryAccentClass(category.name),
+                          )}
+                        />
+                        <span className="truncate">{category.name}</span>
+                      </span>
+                      <span className="ml-2 shrink-0 rounded-full bg-muted/50 px-1.5 font-mono text-[10px] text-muted-foreground/50 transition-colors group-hover:bg-muted/80 group-hover:text-muted-foreground/70 dark:bg-white/[0.03] dark:group-hover:bg-white/[0.06]">
+                        {category.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+            {categoryGroups.length > 0 && (
+              <AlphabetRail
+                availableLetters={availableLetters}
+                onJump={jumpToLetter}
+                className="sticky top-2 ml-1 shrink-0 rounded-full bg-muted/40 dark:bg-white/[0.03]"
+              />
+            )}
           </div>
         </div>
       </ScrollArea>
