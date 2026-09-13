@@ -4,8 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore }
 import Link from "next/link";
 import posthog from "posthog-js";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowRight, FileText, Menu, Moon, Package, Plus, Search, Sparkles, Sun, X } from "lucide-react";
-import { Github } from "@/components/icons/shared/brand-icons";
+import { ArrowRight, ChevronDown, FileText, Menu, Moon, Package, Plus, Search, Sparkles, Sun, X } from "lucide-react";
 import { TheSVGMark } from "@/components/icons/the-svg-mark";
 import { useTheme } from "next-themes";
 import { useSettingsStore } from "@/lib/stores/settings-store";
@@ -684,18 +683,25 @@ export function Header({ collectionCounts }: HeaderProps) {
                 title="GitHub repository"
                 className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border/50 text-muted-foreground transition-all hover:border-foreground/20 hover:bg-accent hover:text-foreground sm:h-8 sm:w-8 dark:border-white/[0.08] dark:hover:border-white/20 dark:hover:bg-white/[0.06]"
               >
-                <Github className="h-4 w-4" />
+                <img
+                  src="/icons/github/default.svg"
+                  alt=""
+                  width={16}
+                  height={16}
+                  className="h-4 w-4 dark:invert"
+                />
               </a>
               <DropdownMenu>
                 <DropdownMenuTrigger>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground"
+                    className="h-9 w-auto gap-1 px-2 sm:h-8 text-muted-foreground hover:text-foreground"
                     aria-label="Default copy format"
                     title="Default Copy Format"
                   >
                     <span className="text-[10px] uppercase font-bold">{FORMAT_BUTTONS.find(f => f.value === defaultCopyFormat)?.label || defaultCopyFormat}</span>
+                    <ChevronDown className="h-3 w-3 opacity-60" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

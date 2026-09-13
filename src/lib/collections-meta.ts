@@ -1,5 +1,23 @@
-import type { ComponentType } from "react";
-import { Cloud, ShieldCheck, Shapes, Users } from "lucide-react";
+import { createElement, type ComponentType } from "react";
+import { ShieldCheck, Shapes, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+/**
+ * Renders the real brand SVG shipped in `public/icons/{slug}/default.svg`
+ * as a component matching the `ComponentType<{ className?: string }>`
+ * contract every collection-icon consumer already expects, so cloud
+ * collections show their actual logo instead of a generic Lucide glyph.
+ */
+function brandIcon(slug: string): ComponentType<{ className?: string }> {
+  const BrandIcon = ({ className }: { className?: string }) =>
+    createElement("img", {
+      src: `/icons/${slug}/default.svg`,
+      alt: "",
+      className: cn("object-contain", className),
+    });
+  BrandIcon.displayName = `BrandIcon(${slug})`;
+  return BrandIcon;
+}
 
 /**
  * Single source of truth for collection metadata. Every collection that
@@ -65,7 +83,7 @@ export const COLLECTIONS_META: Record<CollectionId, CollectionMeta> = {
     id: "aws",
     label: "AWS Architecture",
     shortLabel: "AWS",
-    icon: Cloud,
+    icon: brandIcon("aws"),
     color: "text-[#ff9900]",
     pageTitle: "AWS Architecture Icons - Free SVG Download",
     pageDescription:
@@ -87,7 +105,7 @@ export const COLLECTIONS_META: Record<CollectionId, CollectionMeta> = {
     id: "azure",
     label: "Azure Services",
     shortLabel: "Azure",
-    icon: Cloud,
+    icon: brandIcon("microsoft-azure"),
     color: "text-[#0078d4]",
     pageTitle: "Microsoft Azure Icons - Free SVG Download",
     pageDescription:
@@ -109,7 +127,7 @@ export const COLLECTIONS_META: Record<CollectionId, CollectionMeta> = {
     id: "gcp",
     label: "Google Cloud",
     shortLabel: "GCP",
-    icon: Cloud,
+    icon: brandIcon("google-cloud"),
     color: "text-[#4285f4]",
     pageTitle: "Google Cloud Platform Icons - Free SVG Download",
     pageDescription:
@@ -131,7 +149,7 @@ export const COLLECTIONS_META: Record<CollectionId, CollectionMeta> = {
     id: "k8s",
     label: "Kubernetes",
     shortLabel: "K8s",
-    icon: Cloud,
+    icon: brandIcon("kubernetes"),
     color: "text-[#326ce5]",
     pageTitle: "Kubernetes Icons - Free SVG Download",
     pageDescription:
