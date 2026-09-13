@@ -142,8 +142,13 @@ export function sanitizeSvgForRender(source: string): string {
   if (typeof window === "undefined") return source;
   if (!isLikelySvg(source)) return source;
 
-  // @ts-ignore - DOMPurify type definitions may be slightly restrictive
-  const purify = typeof DOMPurify.sanitize === "function" ? DOMPurify : DOMPurify(window);
+  // Isomorphic DOMPurify initialization. We use @ts-expect-error on the
+  // instantiation since the default export can act as both the initialized
+  // module (in some environments) or the factory function.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const DOMPurifyAny = DOMPurify as any;
+  const purify = DOMPurifyAny.sanitize ? DOMPurifyAny : DOMPurifyAny(window);
+
   return purify.sanitize(source, {
     USE_PROFILES: { svg: true, svgFilters: true },
     RETURN_DOM: false,
