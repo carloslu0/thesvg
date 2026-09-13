@@ -2,3 +2,7 @@
 **Vulnerability:** Regex-based sanitization in `sanitizeSvgForRender` was vulnerable to XSS bypasses, and syntax highlight escaping `esc()` did not escape quotes (`"` and `'`), potentially allowing attribute injection.
 **Learning:** `dangerouslySetInnerHTML` on user input is a huge risk. Regex cannot safely parse HTML/SVG trees; `DOMParser` is robust.
 **Prevention:** Rely on DOM parsing logic (`DOMParser`) to walk and strip dangerous elements (`<script>`, `<foreignObject>`, `on*` events, `javascript:` hrefs) rather than regex string replacement. Ensure text encoding routines escape `"` and `'`.
+## 2024-05-24 - DOM-based HTML Escaping Failed to Encode Quotes
+**Vulnerability:** XSS vulnerability in `escapeHtml` located in `extensions/figma/src/ui.ts` due to relying on DOM `.innerHTML` to escape characters, which fails to escape single and double quotes.
+**Learning:** Browsers do not escape single (`'`) or double (`"`) quotes when reading `.innerHTML` after assigning `.textContent`. If this "escaped" string is placed inside an HTML attribute (like `<button title="${escapeHtml(input)}">`), it can break out and cause XSS.
+**Prevention:** Always use regex replacements or a robust library to escape HTML entities (`&`, `<`, `>`, `"`, `'`) for user input, especially when the output will be embedded within HTML attributes.
