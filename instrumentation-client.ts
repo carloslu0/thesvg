@@ -5,6 +5,18 @@ const shouldIgnore =
   typeof document !== "undefined" &&
   document.cookie.includes("thesvg_ignore_analytics=true");
 
+// Local development runs against the production PostHog project. Without this
+// guard, anything a developer breaks on their machine (a throw in a dev build,
+// a half-finished component) is captured as if a real user hit it in
+// production, so dev-only crashes pollute error tracking. Skip capture when the
+// app runs on a developer's machine.
+const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]", "::1"];
+
+const isLocalEnvironment =
+  process.env.NODE_ENV === "development" ||
+  (typeof window !== "undefined" &&
+    LOCAL_HOSTS.includes(window.location.hostname));
+
 const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 
 // Meta in-app browsers (Instagram, Threads, Facebook) inject their own native
@@ -32,7 +44,7 @@ function isInAppBrowserBridgeError(result: CaptureResult): boolean {
   });
 }
 
-if (posthogKey) {
+if (posthogKey && !isLocalEnvironment) {
   posthog.init(posthogKey, {
     api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
     ui_host: "https://us.posthog.com",
