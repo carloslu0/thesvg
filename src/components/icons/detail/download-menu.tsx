@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   downloadBlob,
+  fetchSvgText,
   type RasterFormat,
   svgToRaster,
 } from "@/lib/svg-to-png";
@@ -54,22 +55,41 @@ export function DownloadMenu({
   title,
   activeVariant,
 }: DownloadMenuProps) {
-  const [busy, setBusy] = useState<string | null>(null);
+  // Tracked per action so one in-flight (or stalled) export never disables the
+  // other half of the split button or any unrelated menu item. Combined with
+  // the timeout in svgToRaster, a failed export always clears its own key.
+  const [busy, setBusy] = useState<ReadonlySet<string>>(() => new Set());
   const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [activeFormat, setActiveFormat] = useState<RasterFormat>("png");
+
+  const startBusy = useCallback((key: string) => {
+    setError(null);
+    setBusy((prev) => new Set(prev).add(key));
+  }, []);
+  const endBusy = useCallback((key: string) => {
+    setBusy((prev) => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  }, []);
 
   const flashDone = useCallback(() => {
     setDone(true);
     setTimeout(() => setDone(false), 1600);
   }, []);
 
+  const flashError = useCallback((message: string) => {
+    setError(message);
+    setTimeout(() => setError(null), 4000);
+  }, []);
+
   const handleSvgDownload = useCallback(async () => {
-    if (busy) return;
-    setBusy("svg");
+    if (busy.has("svg")) return;
+    startBusy("svg");
     try {
-      const text = svgContent
-        ? svgContent
-        : await fetch(currentPath).then((r) => r.text());
+      const text = svgContent ? svgContent : await fetchSvgText(currentPath);
       const blob = new Blob([text], { type: "image/svg+xml" });
       downloadBlob(blob, `${safeName(slug, activeVariant)}.svg`);
       posthog.capture("icon_downloaded", {
@@ -82,15 +102,15 @@ export function DownloadMenu({
     } catch {
       window.open(currentPath, "_blank");
     } finally {
-      setBusy(null);
+      endBusy("svg");
     }
-  }, [busy, svgContent, currentPath, slug, activeVariant, flashDone]);
+  }, [busy, svgContent, currentPath, slug, activeVariant, flashDone, startBusy, endBusy]);
 
   const handleRasterDownload = useCallback(
     async (format: RasterFormat, size: number) => {
       const key = `${format}-${size}`;
-      if (busy) return;
-      setBusy(key);
+      if (busy.has(key)) return;
+      startBusy(key);
       try {
         const source = svgContent || currentPath;
         const blob = await svgToRaster(source, size, format);
@@ -108,30 +128,28 @@ export function DownloadMenu({
         });
         flashDone();
       } catch {
-        // ignore — user can retry
+        flashError(`${format.toUpperCase()} export failed. Please try again.`);
       } finally {
-        setBusy(null);
+        endBusy(key);
       }
     },
-    [busy, svgContent, currentPath, slug, activeVariant, flashDone],
+    [busy, svgContent, currentPath, slug, activeVariant, flashDone, flashError, startBusy, endBusy],
   );
 
   const handleCopyDataUri = useCallback(async () => {
-    if (busy) return;
-    setBusy("uri");
+    if (busy.has("uri")) return;
+    startBusy("uri");
     try {
-      const text = svgContent
-        ? svgContent
-        : await fetch(currentPath).then((r) => r.text());
+      const text = svgContent ? svgContent : await fetchSvgText(currentPath);
       const uri = `data:image/svg+xml;utf8,${encodeURIComponent(text)}`;
       await navigator.clipboard.writeText(uri);
       flashDone();
     } catch {
-      // ignore
+      flashError("Copy failed. Please try again.");
     } finally {
-      setBusy(null);
+      endBusy("uri");
     }
-  }, [busy, svgContent, currentPath, flashDone]);
+  }, [busy, svgContent, currentPath, flashDone, flashError, startBusy, endBusy]);
 
   return (
     <div className="inline-flex items-stretch">
@@ -139,7 +157,7 @@ export function DownloadMenu({
         type="button"
         size="sm"
         onClick={handleSvgDownload}
-        disabled={busy !== null}
+        disabled={busy.has("svg")}
         aria-label={`Download ${title} SVG`}
         className={cn(
           "h-9 rounded-r-none border-r border-background/20 px-3 transition-all duration-300",
@@ -148,7 +166,7 @@ export function DownloadMenu({
       >
         {done ? (
           <Check className="mr-1.5 h-4 w-4" />
-        ) : busy === "svg" ? (
+        ) : busy.has("svg") ? (
           <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
         ) : (
           <Download className="mr-1.5 h-4 w-4" />
@@ -162,7 +180,6 @@ export function DownloadMenu({
               type="button"
               size="sm"
               aria-label="More download formats"
-              disabled={busy !== null}
               className="h-9 rounded-l-none px-2"
             >
               <ChevronDown className="h-4 w-4" />
@@ -184,6 +201,15 @@ export function DownloadMenu({
             </p>
           </div>
 
+          {error && (
+            <p
+              role="alert"
+              className="border-b border-border/40 px-3 py-2 text-[11px] font-medium text-red-500"
+            >
+              {error}
+            </p>
+          )}
+
           {/* Vector section */}
           <div className="border-b border-border/40 p-2">
             <p className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
@@ -194,14 +220,14 @@ export function DownloadMenu({
               <button
                 type="button"
                 onClick={handleSvgDownload}
-                disabled={busy !== null}
+                disabled={busy.has("svg")}
                 className={cn(
                   "group flex flex-col items-start gap-1 rounded-lg border border-border/40 bg-card/30 px-2.5 py-2 text-left transition-all hover:border-border hover:bg-card hover:shadow-sm disabled:opacity-50",
-                  busy === "svg" && "border-border bg-card",
+                  busy.has("svg") && "border-border bg-card",
                 )}
               >
                 <span className="flex items-center gap-1.5">
-                  {busy === "svg" ? (
+                  {busy.has("svg") ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                   ) : (
                     <Download className="h-3.5 w-3.5 text-muted-foreground transition-colors group-hover:text-foreground" />
@@ -217,14 +243,14 @@ export function DownloadMenu({
               <button
                 type="button"
                 onClick={handleCopyDataUri}
-                disabled={busy !== null}
+                disabled={busy.has("uri")}
                 className={cn(
                   "group flex flex-col items-start gap-1 rounded-lg border border-border/40 bg-card/30 px-2.5 py-2 text-left transition-all hover:border-border hover:bg-card hover:shadow-sm disabled:opacity-50",
-                  busy === "uri" && "border-border bg-card",
+                  busy.has("uri") && "border-border bg-card",
                 )}
               >
                 <span className="flex items-center gap-1.5">
-                  {busy === "uri" ? (
+                  {busy.has("uri") ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                   ) : (
                     <Clipboard className="h-3.5 w-3.5 text-muted-foreground transition-colors group-hover:text-foreground" />
@@ -274,13 +300,13 @@ export function DownloadMenu({
                     key={size}
                     type="button"
                     onClick={() => handleRasterDownload(activeFormat, size)}
-                    disabled={busy !== null}
+                    disabled={busy.has(key)}
                     className={cn(
                       "group flex flex-col items-center justify-center gap-0.5 rounded-md border border-border/40 bg-card/30 py-1.5 transition-all hover:border-border hover:bg-card hover:shadow-sm disabled:opacity-50",
-                      busy === key && "border-border bg-card",
+                      busy.has(key) && "border-border bg-card",
                     )}
                   >
-                    {busy === key ? (
+                    {busy.has(key) ? (
                       <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                     ) : (
                       <>

@@ -44,6 +44,79 @@ interface IconDetailPageProps {
   badgeCounterpart?: IconEntry | null;
 }
 
+// The preview already invites interaction with hover:scale-105, so a click
+// must do something — copy the SVG markup with a visible confirmation. Kept as
+// a leaf so its transient state does not re-render the whole detail page.
+function PreviewCopyButton({
+  src,
+  title,
+  svgContent,
+  slug,
+  activeVariant,
+}: {
+  src: string;
+  title: string;
+  svgContent: string;
+  slug: string;
+  activeVariant: string;
+}) {
+  const [state, setState] = useState<"idle" | "copied" | "error">("idle");
+
+  const handleCopy = useCallback(async () => {
+    if (!svgContent) return;
+    try {
+      await navigator.clipboard.writeText(svgContent);
+      setState("copied");
+      posthog.capture("icon_svg_copied", {
+        slug,
+        variant: activeVariant,
+        source: "preview",
+      });
+    } catch {
+      setState("error");
+    }
+    setTimeout(() => setState("idle"), 1600);
+  }, [svgContent, slug, activeVariant]);
+
+  const label =
+    state === "copied"
+      ? "Copied!"
+      : state === "error"
+        ? "Couldn't copy"
+        : "Click to copy SVG";
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      disabled={!svgContent}
+      aria-label={
+        state === "copied" ? "Copied SVG markup" : `Copy ${title} SVG markup`
+      }
+      className="group/preview relative flex items-center justify-center rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
+    >
+      <img
+        src={src}
+        alt={title}
+        className="h-40 w-40 object-contain drop-shadow-md transition-transform duration-300 group-hover/preview:scale-105"
+      />
+      <span
+        className={cn(
+          "pointer-events-none absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-medium shadow-md transition-opacity duration-200",
+          state === "error"
+            ? "bg-red-500 text-white"
+            : "bg-foreground text-background",
+          state === "idle"
+            ? "opacity-0 group-hover/preview:opacity-100"
+            : "opacity-100",
+        )}
+      >
+        {label}
+      </span>
+    </button>
+  );
+}
+
 export function IconDetailPage({
   icon,
   relatedIcons = [],
@@ -204,10 +277,12 @@ export function IconDetailPage({
                 : undefined
             }
           >
-            <img
+            <PreviewCopyButton
               src={currentPath}
-              alt={icon.title}
-              className="h-40 w-40 object-contain drop-shadow-md transition-transform duration-300 hover:scale-105"
+              title={icon.title}
+              svgContent={svgContent}
+              slug={icon.slug}
+              activeVariant={activeVariant}
             />
             {icon.hex && icon.hex !== "000000" && (
               <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full border border-border/40 bg-background/70 px-2.5 py-1 backdrop-blur-sm">
