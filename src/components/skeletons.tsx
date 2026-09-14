@@ -47,8 +47,7 @@ export function MobileHeaderSkeleton() {
   return (
     <div
       aria-hidden
-      className="surface-glass fixed inset-x-3 z-30 mx-auto max-w-md rounded-[24px] border border-border/40 lg:hidden dark:border-white/[0.08]"
-      style={{ top: "max(12px, calc(var(--safe-top) + 12px))" }}
+      className="surface-glass fixed inset-x-3 top-[max(12px,calc(var(--safe-top)+12px))] z-30 mx-auto max-w-md rounded-[24px] border border-border/40 lg:hidden dark:border-white/[0.08]"
     >
       <div className="flex h-12 items-center gap-2 px-2">
         <TheSVGMark className="h-8 w-8 rounded-lg" />
@@ -65,7 +64,7 @@ export function MobileHeaderSkeleton() {
  */
 export function ContentSkeleton() {
   return (
-    <div aria-hidden className="mx-auto max-w-7xl px-3 py-6 sm:px-4" style={{ minHeight: "60vh" }}>
+    <div aria-hidden className="mx-auto min-h-[60vh] max-w-7xl px-3 py-6 sm:px-4">
       <Pulse className="h-6 w-40" />
       <Pulse className="mt-3 h-4 w-full max-w-md bg-muted-foreground/[0.06]" />
     </div>

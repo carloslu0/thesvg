@@ -40,7 +40,9 @@ export function searchIcons(
   // minMatchCharLength never match, so drop them.
   // Deduplicate tokens so a repeated word (e.g. "looker looker studio")
   // can't count twice for one icon and outrank an equally-relevant match.
-  const tokens = [...new Set(trimmed.split(/\s+/).filter((t) => t.length >= 2))];
+  const tokens = [
+    ...new Set(trimmed.toLowerCase().split(/\s+/).filter((t) => t.length >= 2)),
+  ];
   if (tokens.length <= 1) return fuse.search(trimmed).map((r) => r.item);
 
   // Score each icon by how many tokens it matches, then by combined Fuse

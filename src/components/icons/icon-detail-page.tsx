@@ -212,6 +212,10 @@ export function IconDetailPage({
   useEffect(() => {
     if (!currentPath) return;
     let cancelled = false;
+    // Clear immediately so consumers (copy button, code panels) never treat
+    // the previous variant's markup as belonging to the new currentPath
+    // while this fetch is in flight.
+    setSvgContent("");
     fetch(currentPath)
       .then((r) => r.text())
       .then((text) => {

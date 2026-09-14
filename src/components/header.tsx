@@ -151,8 +151,12 @@ export function Header({ collectionCounts }: HeaderProps) {
   // and analytics stay in one place. `isLoading` gates the empty state below
   // so the dropdown never claims "No icons match" while a search is still in
   // flight (manifest fetch + Fuse build).
-  const { results: suggestions, total: totalMatches, isLoading: searchLoading } =
-    useIconSearch({ query, source: "header", limit: 6 });
+  const {
+    results: suggestions,
+    total: totalMatches,
+    isLoading: searchLoading,
+    error: searchError,
+  } = useIconSearch({ query, source: "header", limit: 6 });
   const [recentViewedIcons, setRecentViewedIcons] = useState<IconEntry[]>([]);
   const hasQuery = query.trim().length >= 2;
   const showDropdown = focused;
@@ -452,6 +456,13 @@ export function Header({ collectionCounts }: HeaderProps) {
                       <Search className="h-5 w-5 animate-pulse text-muted-foreground/30" />
                       <p className="text-sm text-muted-foreground">
                         Searching&hellip;
+                      </p>
+                    </div>
+                  ) : searchError ? (
+                    <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
+                      <Search className="h-5 w-5 text-muted-foreground/30" />
+                      <p className="text-sm text-muted-foreground">
+                        Search failed to load. Check your connection and try again.
                       </p>
                     </div>
                   ) : (
