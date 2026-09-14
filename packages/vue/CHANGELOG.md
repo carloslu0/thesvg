@@ -1,5 +1,11 @@
 # @thesvg/vue
 
+## 3.3.7
+
+### Patch Changes
+
+- feat: add 5 icons from community submission queue ([#1070](https://github.com/glincker/thesvg/issues/1070))
+
 ## 3.3.6
 
 ### Patch Changes
