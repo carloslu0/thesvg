@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import {
   getCategoryCounts,
   getIconCount,
@@ -8,6 +7,7 @@ import {
 } from "@/lib/icons";
 import { HomeContent } from "@/components/home-content";
 import { JsonLd } from "@/components/json-ld";
+import { BrowseSuspense } from "@/components/skeletons";
 
 const count = getFormattedIconCount();
 
@@ -58,14 +58,14 @@ export default function Home() {
   return (
     <>
       <JsonLd data={jsonLd} />
-      <Suspense>
+      <BrowseSuspense>
         <HomeContent
           categoryCounts={categoryCounts}
           count={iconCount}
           recentIcons={recentIcons}
           collections={collections}
         />
-      </Suspense>
+      </BrowseSuspense>
     </>
   );
 }

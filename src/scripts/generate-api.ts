@@ -7,14 +7,14 @@
  * Outputs:
  *   public/api/registry.json      - all icons (slug, title, aliases, categories, hex, url, variant keys)
  *   public/api/categories.json    - category list with counts
- *   public/api/icons-full.json    - full icon manifest (all fields) for client-side lazy loading
+ *   public/api/icons-full.json    - slim, minified browse index for client-side lazy loading
  *
  * Note: Individual per-icon detail files are NOT generated to stay within
  * Cloudflare Pages' 20,000 file deployment limit. Extensions should fetch
  * SVG content directly from /icons/{slug}/{variant}.svg.
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync, copyFileSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from "fs";
 import { join } from "path";
 
 const ROOT = join(__dirname, "../..");
@@ -30,10 +30,13 @@ interface IconEntry {
   variants: Record<string, string | undefined>;
   license: string;
   url?: string;
+  guidelines?: string;
   dateAdded?: string;
   collection: string;
   collectionVersion?: string;
   collectionMeta?: Record<string, string | undefined>;
+  supersedes?: string;
+  supersededBy?: string;
 }
 
 function main() {
@@ -79,11 +82,19 @@ function main() {
   );
   console.log(`  categories.json: ${categories.length} categories`);
 
-  // --- icons-full.json (full manifest for client-side lazy loading) ---
-  // Copied verbatim so the client can fetch it on demand instead of receiving
-  // the entire 2.5 MB array serialized into the initial HTML payload.
-  copyFileSync(ICONS_JSON, join(PUBLIC_API, "icons-full.json"));
-  console.log(`  icons-full.json: ${icons.length} icons (full manifest)`);
+  // --- icons-full.json (slim browse index for client-side lazy loading) ---
+  // The browse surface (grid, search, quick-preview) reads every field except
+  // these collection-lineage extras, so we drop them and write minified JSON
+  // instead of copying the pretty-printed source. Omitting by rest-spread keeps
+  // any future IconEntry field in the index by default; only the known-unused
+  // heavy fields are dropped here. This shrinks the download the browse flow
+  // blocks on.
+  const browseIndex = icons.map(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- rest-spread omit
+    ({ collectionVersion, collectionMeta, supersedes, supersededBy, ...browse }) => browse,
+  );
+  writeFileSync(join(PUBLIC_API, "icons-full.json"), JSON.stringify(browseIndex));
+  console.log(`  icons-full.json: ${icons.length} icons (slim browse index)`);
 
   console.log("API generation complete.");
 }

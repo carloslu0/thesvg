@@ -12,3 +12,9 @@
 
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Generated JSON API (icons-full.json, registry.json, categories.json).
+# Not content-hashed, so it can't be immutable; cache for an hour and serve
+# stale while revalidating so repeat browse sessions skip the re-download.
+/api/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
