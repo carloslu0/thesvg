@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getAllIcons, getCategoryCounts, getCollections } from "@/lib/icons";
+import { getCategoryCounts, getCollections } from "@/lib/icons";
 import { SidebarShell } from "@/components/layout/sidebar-shell";
 import { RecentsPage } from "@/components/recents/recents-page";
 
@@ -16,11 +16,10 @@ export const metadata: Metadata = {
 export default function Page() {
   const categoryCounts = getCategoryCounts();
   const collections = getCollections();
-  const icons = getAllIcons();
 
   return (
     <SidebarShell categoryCounts={categoryCounts} collections={collections}>
-      <RecentsPage allIcons={icons} />
+      <RecentsPage />
     </SidebarShell>
   );
 }
