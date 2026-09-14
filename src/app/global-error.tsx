@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import posthog from "posthog-js";
 
 export default function GlobalError({
   error,
@@ -11,6 +12,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error("[thesvg] Global error:", error);
+    posthog.captureException(error, { digest: error.digest });
   }, [error]);
 
   return (
