@@ -18,6 +18,11 @@ export function BrandGlow({ hex }: { hex?: string }) {
   const [ready, setReady] = useState(false);
   const [enabled, setEnabled] = useState(true);
   const [showHint, setShowHint] = useState(false);
+  // Short-lived confirmation shown right after a toggle. The glow itself is
+  // subtle (near-invisible in light mode), so without an explicit label the
+  // click reads as dead and users rage-click it.
+  const [flash, setFlash] = useState<string | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollLayerRef = useRef<HTMLDivElement>(null);
 
   const dismissHint = useCallback(() => {
@@ -85,6 +90,9 @@ export function BrandGlow({ hex }: { hex?: string }) {
       // storage blocked
     }
     setEnabled(next);
+    setFlash(next ? "Glow on" : "Glow off");
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = setTimeout(() => setFlash(null), 1400);
   }
 
   // Falls back to theSVG's own brand orange for the many icons whose hex is
@@ -94,6 +102,8 @@ export function BrandGlow({ hex }: { hex?: string }) {
   const realColor = brandGlowColor(hex);
   const glowColor = realColor ?? "#F97316";
   const glowOpacityClass = realColor ? "opacity-[0.14] dark:opacity-[0.4]" : "opacity-[0.08] dark:opacity-[0.22]";
+
+  const tooltipText = flash ?? (showHint ? "Toggle the background glow" : null);
 
   return (
     <>
@@ -118,12 +128,12 @@ export function BrandGlow({ hex }: { hex?: string }) {
       )}
       {ready && (
         <div className="fixed top-20 right-3 z-40 sm:right-5">
-          {showHint && (
+          {tooltipText && (
             <div
               role="status"
               className="animate-in slide-in-from-right-2 fade-in absolute top-1/2 right-full mr-2.5 -translate-y-1/2 whitespace-nowrap rounded-lg border border-border/60 bg-foreground px-2.5 py-1.5 text-[11px] font-medium text-background shadow-lg duration-300"
             >
-              Toggle the background glow
+              {tooltipText}
               <span className="absolute top-1/2 left-full -translate-y-1/2 border-4 border-transparent border-l-foreground" />
             </div>
           )}

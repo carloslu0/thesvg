@@ -4,6 +4,49 @@
  */
 
 /**
+ * Time budget for one raster conversion. An <img> that never fires load or
+ * error (a hung blob decode), or a fetch that stalls, would otherwise leave
+ * the caller awaiting forever and strand its busy/loading state. On timeout
+ * the promise rejects so the caller can surface a retryable error.
+ */
+const RASTER_TIMEOUT_MS = 15_000;
+
+/** Fetch SVG markup from a URL, aborting if the request stalls. */
+export async function fetchSvgText(url: string): Promise<string> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), RASTER_TIMEOUT_MS);
+  try {
+    const r = await fetch(url, { signal: controller.signal });
+    if (!r.ok) throw new Error(`Failed to fetch SVG: ${r.statusText}`);
+    return await r.text();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Load a blob URL into an Image, rejecting if it never settles. */
+export function loadSvgImage(blobUrl: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const timer = setTimeout(() => {
+      image.onload = null;
+      image.onerror = null;
+      image.src = "";
+      reject(new Error("SVG render timed out"));
+    }, RASTER_TIMEOUT_MS);
+    image.onload = () => {
+      clearTimeout(timer);
+      resolve(image);
+    };
+    image.onerror = (err) => {
+      clearTimeout(timer);
+      reject(new Error(`Image load failed: ${String(err)}`));
+    };
+    image.src = blobUrl;
+  });
+}
+
+/**
  * Converts an SVG at the given URL to a PNG Blob at the requested pixel size.
  *
  * Handles SVGs with or without explicit width/height by relying on viewBox.
@@ -14,10 +57,7 @@ export async function svgToPng(svgSource: string, size: number): Promise<Blob> {
   // 1. Resolve SVG source text - accept raw SVG markup or a URL
   const svgText = svgSource.trimStart().startsWith("<")
     ? svgSource
-    : await fetch(svgSource).then((r) => {
-        if (!r.ok) throw new Error(`Failed to fetch SVG: ${r.statusText}`);
-        return r.text();
-      });
+    : await fetchSvgText(svgSource);
 
   // 2. Parse the SVG to extract viewBox so the canvas renders proportionally.
   //    We clone the SVG string, inject explicit width/height, then create a
@@ -70,12 +110,7 @@ export async function svgToPng(svgSource: string, size: number): Promise<Blob> {
 
   try {
     // 4. Load the SVG blob URL into an Image element.
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const image = new Image();
-      image.onload = () => resolve(image);
-      image.onerror = (err) => reject(new Error(`Image load failed: ${String(err)}`));
-      image.src = blobUrl;
-    });
+    const img = await loadSvgImage(blobUrl);
 
     // 5. Draw onto a canvas and export as PNG.
     const canvas = document.createElement("canvas");
@@ -125,10 +160,7 @@ export async function svgToRaster(
 ): Promise<Blob> {
   const svgText = svgSource.trimStart().startsWith("<")
     ? svgSource
-    : await fetch(svgSource).then((r) => {
-        if (!r.ok) throw new Error(`Failed to fetch SVG: ${r.statusText}`);
-        return r.text();
-      });
+    : await fetchSvgText(svgSource);
 
   const parser = new DOMParser();
   const doc = parser.parseFromString(svgText, "image/svg+xml");
@@ -163,13 +195,7 @@ export async function svgToRaster(
   const blobUrl = URL.createObjectURL(svgBlob);
 
   try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const image = new Image();
-      image.onload = () => resolve(image);
-      image.onerror = (err) =>
-        reject(new Error(`Image load failed: ${String(err)}`));
-      image.src = blobUrl;
-    });
+    const img = await loadSvgImage(blobUrl);
 
     const canvas = document.createElement("canvas");
     canvas.width = canvasW;
