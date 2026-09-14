@@ -1,7 +1,7 @@
 [
   {
     "slug": "01dotai",
-    "title": "01.AI (\u96f6\u4e00\u4e07\u7269)",
+    "title": "01.AI (零一万物)",
     "aliases": [],
     "hex": "003425",
     "categories": [
@@ -1396,6 +1396,25 @@
     "dateAdded": "2026-05-05"
   },
   {
+    "slug": "adobe-creative-cloud",
+    "title": "Adobe Creative Cloud",
+    "aliases": [
+      "creative-cloud"
+    ],
+    "hex": "DA1F26",
+    "categories": [
+      "Design",
+      "Software"
+    ],
+    "variants": {
+      "default": "/icons/adobe-creative-cloud/default.svg"
+    },
+    "license": "brand-use",
+    "url": "https://www.adobe.com/creativecloud.html",
+    "dateAdded": "2026-09-13",
+    "collection": "brands"
+  },
+  {
     "slug": "adobe-fonts",
     "title": "Adobe Fonts",
     "aliases": [],
@@ -1613,7 +1632,7 @@
   },
   {
     "slug": "aeromexico",
-    "title": "Aerom\u00e9xico",
+    "title": "Aeroméxico",
     "aliases": [],
     "hex": "0B2343",
     "categories": [
@@ -1648,7 +1667,7 @@
     "slug": "afdian",
     "title": "AFDIAN",
     "aliases": [
-      "\u7231\u53d1\u7535"
+      "爱发电"
     ],
     "hex": "946CE6",
     "categories": [
@@ -1999,7 +2018,7 @@
   },
   {
     "slug": "ai360-360",
-    "title": "Ai360 (360\u667a\u8111)",
+    "title": "Ai360 (360智脑)",
     "aliases": [],
     "hex": "006ffb",
     "categories": [
@@ -2037,7 +2056,7 @@
   },
   {
     "slug": "aihubmix",
-    "title": "AiHubMix (\u63a8\u7406\u65f6\u4ee3)",
+    "title": "AiHubMix (推理时代)",
     "aliases": [],
     "hex": "006FFB",
     "categories": [
@@ -2056,7 +2075,7 @@
   },
   {
     "slug": "aimass",
-    "title": "AiMass (\u7d2b\u4e1c\u592a\u521d)",
+    "title": "AiMass (紫东太初)",
     "aliases": [],
     "hex": "fff",
     "categories": [
@@ -2130,7 +2149,7 @@
   },
   {
     "slug": "air-algerie",
-    "title": "Air Alg\u00e9rie",
+    "title": "Air Algérie",
     "aliases": [],
     "hex": "E2001A",
     "categories": [
@@ -2808,7 +2827,7 @@
   },
   {
     "slug": "aldi-sud",
-    "title": "Aldi S\u00fcd",
+    "title": "Aldi Süd",
     "aliases": [],
     "hex": "00005F",
     "categories": [
@@ -2985,7 +3004,7 @@
   },
   {
     "slug": "alibabacloud",
-    "title": "AlibabaCloud (\u963f\u91cc\u4e91)",
+    "title": "AlibabaCloud (阿里云)",
     "aliases": [],
     "hex": "FF6A00",
     "categories": [
@@ -3571,7 +3590,7 @@
     "aliases": [
       "Ameba Blog",
       "Ameblo",
-      "\u30a2\u30e1\u30d6\u30ed"
+      "アメブロ"
     ],
     "hex": "2D8C3C",
     "categories": [
@@ -37279,7 +37298,7 @@
   },
   {
     "slug": "baai",
-    "title": "BAAI (\u667a\u6e90\u7814\u7a76\u9662)",
+    "title": "BAAI (智源研究院)",
     "aliases": [],
     "hex": "000",
     "categories": [
@@ -37511,7 +37530,7 @@
   },
   {
     "slug": "baichuan",
-    "title": "Baichuan (\u767e\u5ddd)",
+    "title": "Baichuan (百川)",
     "aliases": [],
     "hex": "FF6933",
     "categories": [
@@ -37548,7 +37567,7 @@
   },
   {
     "slug": "baiducloud",
-    "title": "BaiduCloud (\u767e\u5ea6\u667a\u80fd\u4e91)",
+    "title": "BaiduCloud (百度智能云)",
     "aliases": [],
     "hex": "2468f2",
     "categories": [
@@ -37567,7 +37586,7 @@
   },
   {
     "slug": "bailian",
-    "title": "Bailian (\u963f\u91cc\u4e91\u767e\u70bc)",
+    "title": "Bailian (阿里云百炼)",
     "aliases": [],
     "hex": "615ced",
     "categories": [
@@ -37604,7 +37623,7 @@
   },
   {
     "slug": "bakalari",
-    "title": "Bakal\u00e1\u0159i",
+    "title": "Bakaláři",
     "aliases": [],
     "hex": "00A2E2",
     "categories": [
@@ -41490,7 +41509,7 @@
     "slug": "btk",
     "title": "BTK",
     "aliases": [
-      "Bilgi Teknolojileri ve \u0130leti\u015fim Kurumu",
+      "Bilgi Teknolojileri ve İletişim Kurumu",
       "Information and Communication Technologies Authority"
     ],
     "hex": "000000",
@@ -43311,7 +43330,7 @@
     "title": "CBC",
     "aliases": [
       "Canadian Broadcasting Company",
-      "Soci\u00e9t\u00e9 Radio-Canada"
+      "Société Radio-Canada"
     ],
     "hex": "E60505",
     "categories": [
@@ -43904,7 +43923,7 @@
   },
   {
     "slug": "chatglm",
-    "title": "ChatGLM (\u667a\u8c31)",
+    "title": "ChatGLM (智谱)",
     "aliases": [],
     "hex": "4268FA",
     "categories": [
@@ -44745,7 +44764,7 @@
     "slug": "citroen",
     "title": "Citroen",
     "aliases": [
-      "Citroe\u00ebn"
+      "Citroeën"
     ],
     "hex": "8B8B8B",
     "categories": [
@@ -50016,7 +50035,7 @@
   },
   {
     "slug": "dall-e-openai",
-    "title": "DALL\u00b7E (OpenAI)",
+    "title": "DALL·E (OpenAI)",
     "aliases": [],
     "hex": "000",
     "categories": [
@@ -50567,7 +50586,7 @@
     "slug": "dazhong-dianping",
     "title": "Dazhong Dianping",
     "aliases": [
-      "\u5927\u4f17\u70b9\u8bc4"
+      "大众点评"
     ],
     "hex": "FF6633",
     "categories": [
@@ -51587,7 +51606,7 @@
     "aliases": [
       "T-Mobile",
       "Magenta Telekom",
-      "\u041c\u0430\u043a\u0435\u0434\u043e\u043d\u0441\u043a\u0438 \u0422\u0435\u043b\u0435\u043a\u043e\u043c"
+      "Македонски Телеком"
     ],
     "hex": "E20074",
     "categories": [
@@ -53570,7 +53589,7 @@
   },
   {
     "slug": "doubao",
-    "title": "Doubao (\u8c46\u5305)",
+    "title": "Doubao (豆包)",
     "aliases": [],
     "hex": "FFF",
     "categories": [
@@ -54589,7 +54608,7 @@
     "slug": "easyeda",
     "title": "EasyEDA",
     "aliases": [
-      "\u5609\u7acb\u521bEDA"
+      "嘉立创EDA"
     ],
     "hex": "1765F6",
     "categories": [
@@ -55181,7 +55200,7 @@
   },
   {
     "slug": "el-corte-ingles",
-    "title": "El Corte Ingl\u00e9s",
+    "title": "El Corte Inglés",
     "aliases": [],
     "hex": "008657",
     "categories": [
@@ -55191,7 +55210,7 @@
     "variants": {
       "default": "/icons/el-corte-ingles/default.svg"
     },
-    "license": "Trademark of El Corte Ingl\u00e9s, S.A. Used for identification under nominative fair use.",
+    "license": "Trademark of El Corte Inglés, S.A. Used for identification under nominative fair use.",
     "url": "https://www.elcorteingles.es",
     "dateAdded": "2026-09-07",
     "collection": "brands"
@@ -61009,7 +61028,7 @@
   },
   {
     "slug": "frequencia-invisivel",
-    "title": "Frequ\u00eancia Invis\u00edvel",
+    "title": "Frequência Invisível",
     "aliases": [],
     "hex": "D59629",
     "categories": [
@@ -68366,7 +68385,7 @@
     "slug": "google",
     "title": "Google",
     "aliases": [
-      "\uad6c\uae00"
+      "구글"
     ],
     "hex": "4285F4",
     "categories": [
@@ -71662,7 +71681,7 @@
   },
   {
     "slug": "hailuo",
-    "title": "Hailuo (\u6d77\u87ba)",
+    "title": "Hailuo (海螺)",
     "aliases": [],
     "hex": "fff",
     "categories": [
@@ -72973,7 +72992,7 @@
     "slug": "hexlet",
     "title": "Hexlet",
     "aliases": [
-      "\u0425\u0435\u043a\u0441\u043b\u0435\u0442"
+      "Хекслет"
     ],
     "hex": "116EF5",
     "categories": [
@@ -74245,7 +74264,7 @@
   },
   {
     "slug": "huaweicloud",
-    "title": "HuaweiCloud (\u534e\u4e3a\u4e91)",
+    "title": "HuaweiCloud (华为云)",
     "aliases": [],
     "hex": "C7000B",
     "categories": [
@@ -74449,7 +74468,7 @@
   },
   {
     "slug": "hunyuan",
-    "title": "Hunyuan (\u817e\u8baf\u6df7\u5143)",
+    "title": "Hunyuan (腾讯混元)",
     "aliases": [],
     "hex": "0053e0",
     "categories": [
@@ -75281,7 +75300,7 @@
   },
   {
     "slug": "iflytekcloud",
-    "title": "IFlyTekCloud (\u8baf\u98de\u5f00\u653e\u5e73\u53f0)",
+    "title": "IFlyTekCloud (讯飞开放平台)",
     "aliases": [],
     "hex": "2A80E2",
     "categories": [
@@ -75444,7 +75463,7 @@
   },
   {
     "slug": "ile-de-france-mobilites",
-    "title": "\u00cele-de-France Mobilit\u00e9s",
+    "title": "Île-de-France Mobilités",
     "aliases": [],
     "hex": "67B4E7",
     "categories": [
@@ -76101,7 +76120,7 @@
   },
   {
     "slug": "infinigence",
-    "title": "Infinigence (\u65e0\u95ee\u82af\u7a79)",
+    "title": "Infinigence (无问芯穹)",
     "aliases": [],
     "hex": "7952ea",
     "categories": [
@@ -77405,7 +77424,7 @@
     "slug": "isc2",
     "title": "ISC2",
     "aliases": [
-      "(ISC)\u00b2"
+      "(ISC)²"
     ],
     "hex": "468145",
     "categories": [
@@ -77497,7 +77516,7 @@
   },
   {
     "slug": "itau",
-    "title": "Ita\u00fa",
+    "title": "Itaú",
     "aliases": [],
     "hex": "EC7000",
     "categories": [
@@ -78383,7 +78402,7 @@
   },
   {
     "slug": "jimeng",
-    "title": "Jimeng (\u5373\u68a6)",
+    "title": "Jimeng (即梦)",
     "aliases": [],
     "hex": "000",
     "categories": [
@@ -80341,7 +80360,7 @@
     "slug": "kakao",
     "title": "Kakao",
     "aliases": [
-      "\uce74\uce74\uc624"
+      "카카오"
     ],
     "hex": "FFCD00",
     "categories": [
@@ -80378,7 +80397,7 @@
     "slug": "kakaotalk",
     "title": "KakaoTalk",
     "aliases": [
-      "\uce74\uce74\uc624\ud1a1"
+      "카카오톡"
     ],
     "hex": "FFCD00",
     "categories": [
@@ -81617,7 +81636,7 @@
     "slug": "kinopoisk",
     "title": "Kinopoisk",
     "aliases": [
-      "\u041a\u0438\u043d\u043e\u041f\u043e\u0438\u0441\u043a"
+      "КиноПоиск"
     ],
     "hex": "FF5500",
     "categories": [
@@ -81813,7 +81832,7 @@
   },
   {
     "slug": "kling",
-    "title": "Kling (\u53ef\u7075)",
+    "title": "Kling (可灵)",
     "aliases": [],
     "hex": "000",
     "categories": [
@@ -82246,7 +82265,7 @@
   },
   {
     "slug": "kolors",
-    "title": "Kolors (\u5feb\u624b\u53ef\u56fe)",
+    "title": "Kolors (快手可图)",
     "aliases": [],
     "hex": "83FF63",
     "categories": [
@@ -82429,7 +82448,7 @@
     "slug": "kotlin",
     "title": "Kotlin",
     "aliases": [
-      "\ucf54\ud2c0\ub9b0"
+      "코틀린"
     ],
     "hex": "7F52FF",
     "categories": [
@@ -83037,7 +83056,7 @@
   },
   {
     "slug": "l-equipe",
-    "title": "L'\u00c9quipe",
+    "title": "L'Équipe",
     "aliases": [],
     "hex": "E42829",
     "categories": [
@@ -83125,7 +83144,7 @@
     "slug": "lada",
     "title": "LADA",
     "aliases": [
-      "\u041b\u0430\u0434\u0430"
+      "Лада"
     ],
     "hex": "ED6B21",
     "categories": [
@@ -84937,8 +84956,8 @@
     "slug": "line",
     "title": "LINE",
     "aliases": [
-      "\u30e9\u30a4\u30f3",
-      "\ub77c\uc778"
+      "ライン",
+      "라인"
     ],
     "hex": "00C300",
     "categories": [
@@ -86426,7 +86445,7 @@
     "slug": "love2d",
     "title": "Love2d",
     "aliases": [
-      "L\u00f6ve"
+      "Löve"
     ],
     "hex": "FFF",
     "categories": [
@@ -87700,6 +87719,26 @@
     "url": "https://www.mangaupdates.com",
     "dateAdded": "2026-03-07",
     "collection": "brands"
+  },
+  {
+    "slug": "mango",
+    "title": "Mango",
+    "aliases": [
+      "mangowm",
+      "mangowc"
+    ],
+    "hex": "f7b83d",
+    "categories": [
+      "Software",
+      "Platform"
+    ],
+    "variants": {
+      "default": "/icons/mango/default.svg"
+    },
+    "license": "Unofficial SVG based on official PNG, project licensed under GPL-3.0-or-later",
+    "url": "https://mangowm.github.io/",
+    "dateAdded": "2026-09-13",
+    "collection": "community"
   },
   {
     "slug": "manifest",
@@ -89318,7 +89357,7 @@
     "slug": "meituan",
     "title": "Meituan",
     "aliases": [
-      "\u7f8e\u56e2"
+      "美团"
     ],
     "hex": "FFD100",
     "categories": [
@@ -89338,7 +89377,7 @@
     "slug": "meizu",
     "title": "Meizu",
     "aliases": [
-      "\u9b45\u65cf"
+      "魅族"
     ],
     "hex": "FF4132",
     "categories": [
@@ -89902,7 +89941,7 @@
   },
   {
     "slug": "metro-de-la-ciudad-de-mexico",
-    "title": "Metro de la Ciudad de M\u00e9xico",
+    "title": "Metro de la Ciudad de México",
     "aliases": [],
     "hex": "F77E1C",
     "categories": [
@@ -89936,7 +89975,7 @@
   },
   {
     "slug": "metro-de-paris",
-    "title": "M\u00e9tro de Paris",
+    "title": "Métro de Paris",
     "aliases": [],
     "hex": "003E95",
     "categories": [
@@ -91951,7 +91990,7 @@
     "slug": "mir",
     "title": "Mir",
     "aliases": [
-      "\u043c\u0438\u0440",
+      "мир",
       "mir card",
       "nspk mir"
     ],
@@ -92235,7 +92274,7 @@
     "aliases": [
       "Mixue Ice Cream & Tea",
       "Mixue Bingcheng",
-      "\u871c\u96ea\u51b0\u57ce"
+      "蜜雪冰城"
     ],
     "hex": "E60012",
     "categories": [
@@ -93043,7 +93082,7 @@
   },
   {
     "slug": "moonshot",
-    "title": "Moonshot (\u6708\u4e4b\u6697\u9762)",
+    "title": "Moonshot (月之暗面)",
     "aliases": [
       "Moonshot AI",
       "Kimi"
@@ -93572,7 +93611,7 @@
   },
   {
     "slug": "muller",
-    "title": "M\u00fcller",
+    "title": "Müller",
     "aliases": [],
     "hex": "F46519",
     "categories": [
@@ -94311,7 +94350,7 @@
     "slug": "namu-wiki",
     "title": "Namu Wiki",
     "aliases": [
-      "\ub098\ubb34\uc704\ud0a4"
+      "나무위키"
     ],
     "hex": "008275",
     "categories": [
@@ -94658,8 +94697,8 @@
     "slug": "naver",
     "title": "Naver",
     "aliases": [
-      "\u30cd\u30a4\u30d0\u30fc",
-      "\ub124\uc774\ubc84"
+      "ネイバー",
+      "네이버"
     ],
     "hex": "03C75A",
     "categories": [
@@ -95265,7 +95304,7 @@
     "slug": "netease-cloud-music",
     "title": "NetEase Cloud Music",
     "aliases": [
-      "\u7f51\u6613\u4e91\u97f3\u4e50"
+      "网易云音乐"
     ],
     "hex": "D43C33",
     "categories": [
@@ -95524,7 +95563,7 @@
     "title": "New Japan Pro-Wrestling",
     "aliases": [
       "NJPW",
-      "\u65b0\u65e5\u672c\u30d7\u30ed\u30ec\u30b9\u30ea\u30f3\u30b0"
+      "新日本プロレスリング"
     ],
     "hex": "FF160B",
     "categories": [
@@ -98145,7 +98184,7 @@
   },
   {
     "slug": "obb",
-    "title": "\u00d6BB",
+    "title": "ÖBB",
     "aliases": [],
     "hex": "E40327",
     "categories": [
@@ -103835,7 +103874,7 @@
   },
   {
     "slug": "picard-surgeles",
-    "title": "Picard Surgel\u00e9s",
+    "title": "Picard Surgelés",
     "aliases": [],
     "hex": "2D4999",
     "categories": [
@@ -108745,7 +108784,7 @@
   },
   {
     "slug": "qingyan",
-    "title": "Qingyan (\u667a\u8c31\u6e05\u8a00)",
+    "title": "Qingyan (智谱清言)",
     "aliases": [],
     "hex": "1041F3",
     "categories": [
@@ -108764,7 +108803,7 @@
   },
   {
     "slug": "qiniu",
-    "title": "Qiniu (\u4e03\u725b\u4e91)",
+    "title": "Qiniu (七牛云)",
     "aliases": [],
     "hex": "06AEEF",
     "categories": [
@@ -113528,7 +113567,7 @@
   },
   {
     "slug": "rte",
-    "title": "RT\u00c9",
+    "title": "RTÉ",
     "aliases": [],
     "hex": "00A7B3",
     "categories": [
@@ -113582,8 +113621,8 @@
     "slug": "rtm",
     "title": "RTM",
     "aliases": [
-      "R\u00e9gie des Transports M\u00e9tropolitains",
-      "R\u00e9gie des Transports de Marseille"
+      "Régie des Transports Métropolitains",
+      "Régie des Transports de Marseille"
     ],
     "hex": "36474F",
     "categories": [
@@ -114678,7 +114717,7 @@
   },
   {
     "slug": "sao-paulo-metro",
-    "title": "S\u00e3o Paulo Metro",
+    "title": "São Paulo Metro",
     "aliases": [],
     "hex": "004382",
     "categories": [
@@ -116030,7 +116069,7 @@
   },
   {
     "slug": "sensenova",
-    "title": "SenseNova (\u5546\u6c64)",
+    "title": "SenseNova (商汤)",
     "aliases": [],
     "hex": "5B2AD8",
     "categories": [
@@ -117400,12 +117439,12 @@
     "title": "SiYuan",
     "aliases": [
       "sy",
-      "\u601d\u6e90\u7b14\u8bb0",
-      "\u601d\u6e90\u7b46\u8a18",
-      "\u601d\u6e90\u7b46\u8a18",
-      "\u601d\u6e90\u7b14\u8bb0",
-      "\u601d\u6e90\u7b14\u8bb0",
-      "\u601d\u6e90\u7b46\u8a18"
+      "思源笔记",
+      "思源筆記",
+      "思源筆記",
+      "思源笔记",
+      "思源笔记",
+      "思源筆記"
     ],
     "hex": "D23F31",
     "categories": [
@@ -117586,7 +117625,7 @@
     "slug": "skoda",
     "title": "Skoda",
     "aliases": [
-      "\u0160koda Auto"
+      "Škoda Auto"
     ],
     "hex": "4BA82E",
     "categories": [
@@ -117689,7 +117728,7 @@
   },
   {
     "slug": "skywork",
-    "title": "Skywork (\u5929\u5de5)",
+    "title": "Skywork (天工)",
     "aliases": [],
     "hex": "fff",
     "categories": [
@@ -118357,7 +118396,7 @@
   },
   {
     "slug": "softcatala",
-    "title": "Softcatal\u00e0",
+    "title": "Softcatalà",
     "aliases": [],
     "hex": "BA2626",
     "categories": [
@@ -119264,7 +119303,7 @@
   },
   {
     "slug": "spark",
-    "title": "Spark (\u8baf\u98de\u661f\u706b)",
+    "title": "Spark (讯飞星火)",
     "aliases": [],
     "hex": "0070f0",
     "categories": [
@@ -120141,8 +120180,8 @@
     "title": "SRG SSR",
     "aliases": [
       "Schweizerische Radio- und Fernsehgesellschaft",
-      "Soci\u00e9t\u00e9 suisse de radiodiffusion et t\u00e9l\u00e9vision",
-      "Societ\u00e0 svizzera di radiotelevisione",
+      "Société suisse de radiodiffusion et télévision",
+      "Società svizzera di radiotelevisione",
       "Societad Svizra da Radio e Televisiun",
       "Swiss Broadcasting Corporation"
     ],
@@ -120754,7 +120793,7 @@
   },
   {
     "slug": "statecloud",
-    "title": "StateCloud (\u5929\u7ffc\u4e91)",
+    "title": "StateCloud (天翼云)",
     "aliases": [],
     "hex": "DF0428",
     "categories": [
@@ -121098,7 +121137,7 @@
   },
   {
     "slug": "stepfun",
-    "title": "Stepfun (\u9636\u8dc3\u661f\u8fb0)",
+    "title": "Stepfun (阶跃星辰)",
     "aliases": [],
     "hex": "005AFF",
     "categories": [
@@ -123005,7 +123044,7 @@
     "slug": "tabelog",
     "title": "Tabelog",
     "aliases": [
-      "\u98df\u3079\u30ed\u30b0"
+      "食べログ"
     ],
     "hex": "F2CC38",
     "categories": [
@@ -123093,7 +123132,7 @@
   },
   {
     "slug": "tado",
-    "title": "tado\u00b0",
+    "title": "tado°",
     "aliases": [],
     "hex": "FFA900",
     "categories": [
@@ -123988,7 +124027,7 @@
   },
   {
     "slug": "tele-quebec",
-    "title": "T\u00e9l\u00e9-Qu\u00e9bec",
+    "title": "Télé-Québec",
     "aliases": [],
     "hex": "1343FB",
     "categories": [
@@ -124004,7 +124043,7 @@
   },
   {
     "slug": "telefonica",
-    "title": "Telef\u00f3nica",
+    "title": "Telefónica",
     "aliases": [],
     "hex": "0066FF",
     "categories": [
@@ -124222,7 +124261,7 @@
   },
   {
     "slug": "tencentcloud",
-    "title": "TencentCloud (\u817e\u8baf\u4e91)",
+    "title": "TencentCloud (腾讯云)",
     "aliases": [],
     "hex": "2151d1",
     "categories": [
@@ -125539,7 +125578,7 @@
   },
   {
     "slug": "tiangong",
-    "title": "Tiangong (\u5929\u5de5)",
+    "title": "Tiangong (天工)",
     "aliases": [],
     "hex": "0057ff",
     "categories": [
@@ -126050,7 +126089,7 @@
     "slug": "tistory",
     "title": "Tistory",
     "aliases": [
-      "\ud2f0\uc2a4\ud1a0\ub9ac"
+      "티스토리"
     ],
     "hex": "000000",
     "categories": [
@@ -129504,7 +129543,7 @@
     "slug": "uniqlo",
     "title": "Uniqlo",
     "aliases": [
-      "\u30e6\u30cb\u30af\u30ed"
+      "ユニクロ"
     ],
     "hex": "FF0000",
     "categories": [
@@ -130677,6 +130716,23 @@
     "collection": "brands"
   },
   {
+    "slug": "vanadium",
+    "title": "Vanadium",
+    "aliases": [],
+    "hex": "000000",
+    "categories": [
+      "Browser",
+      "Mobile App"
+    ],
+    "variants": {
+      "default": "/icons/vanadium/default.svg"
+    },
+    "license": "GPL-2.0",
+    "url": "https://github.com/GrapheneOS/Vanadium",
+    "dateAdded": "2026-09-13",
+    "collection": "community"
+  },
+  {
     "slug": "vanilla-extract",
     "title": "Vanilla Extract",
     "aliases": [],
@@ -131529,7 +131585,7 @@
     "title": "VictoriaMetrics",
     "aliases": [
       "VM",
-      "\ube45\ud1a0\ub9ac\uc544\uba54\ud2b8\ub9ad\uc2a4"
+      "빅토리아메트릭스"
     ],
     "hex": "621773",
     "categories": [
@@ -132625,7 +132681,7 @@
   },
   {
     "slug": "volcengine",
-    "title": "Volcengine (\u706b\u5c71\u5f15\u64ce)",
+    "title": "Volcengine (火山引擎)",
     "aliases": [],
     "hex": "fff",
     "categories": [
@@ -134495,7 +134551,7 @@
   },
   {
     "slug": "wenxin",
-    "title": "Wenxin (\u6587\u5fc3)",
+    "title": "Wenxin (文心)",
     "aliases": [],
     "hex": "167ADF",
     "categories": [
@@ -136515,7 +136571,7 @@
     "slug": "xiaohongshu",
     "title": "Xiaohongshu",
     "aliases": [
-      "\u5c0f\u7ea2\u4e66"
+      "小红书"
     ],
     "hex": "FF2442",
     "categories": [
@@ -136786,7 +136842,7 @@
   },
   {
     "slug": "xuanyuan",
-    "title": "Xuanyuan (\u5ea6\u5c0f\u6ee1\u8f69\u8f95)",
+    "title": "Xuanyuan (度小满轩辕)",
     "aliases": [],
     "hex": "fff",
     "categories": [
@@ -136858,6 +136914,42 @@
     "url": "https://github.com/xyflow/web/blob/fe6af5d1c78de492fc64a39ab8a2085f1eb7164d/sites/xyflow.com/public/img/favicon.svg",
     "dateAdded": "2026-03-07",
     "collection": "brands"
+  },
+  {
+    "slug": "xyzam-badge-black",
+    "title": "Xyzam Badge Black",
+    "aliases": [],
+    "hex": "000000",
+    "categories": [
+      "Web",
+      "Email"
+    ],
+    "variants": {
+      "default": "/icons/xyzam-badge-black/default.svg"
+    },
+    "license": "MIT",
+    "url": "https://xyz.am/brand.php",
+    "guidelines": "https://xyz.am",
+    "dateAdded": "2026-09-13",
+    "collection": "auth-badges"
+  },
+  {
+    "slug": "xyzam-badge-white",
+    "title": "Xyzam Badge White",
+    "aliases": [],
+    "hex": "000000",
+    "categories": [
+      "Web",
+      "Email"
+    ],
+    "variants": {
+      "default": "/icons/xyzam-badge-white/default.svg"
+    },
+    "license": "MIT",
+    "url": "https://xyz.am/brand.php",
+    "guidelines": "https://xyz.am",
+    "dateAdded": "2026-09-13",
+    "collection": "auth-badges"
   },
   {
     "slug": "y-combinator",
@@ -137204,7 +137296,7 @@
   },
   {
     "slug": "yi",
-    "title": "Yi (\u96f6\u4e00\u4e07\u7269)",
+    "title": "Yi (零一万物)",
     "aliases": [],
     "hex": "003425",
     "categories": [
@@ -137531,7 +137623,7 @@
   },
   {
     "slug": "yuanbao",
-    "title": "Yuanbao (\u817e\u8baf\u5143\u5b9d)",
+    "title": "Yuanbao (腾讯元宝)",
     "aliases": [],
     "hex": "fff",
     "categories": [
@@ -137638,7 +137730,7 @@
   },
   {
     "slug": "zabka",
-    "title": "\u017babka",
+    "title": "Żabka",
     "aliases": [],
     "hex": "006420",
     "categories": [
@@ -138429,7 +138521,7 @@
   },
   {
     "slug": "zhipu",
-    "title": "Zhipu (\u667a\u8c31)",
+    "title": "Zhipu (智谱)",
     "aliases": [],
     "hex": "3859FF",
     "categories": [
