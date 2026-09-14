@@ -445,7 +445,7 @@ export function Header({ collectionCounts }: HeaderProps) {
                       )}
                     </div>
                   ) : searchLoading ? (
-                    /* Searching — never show the empty state while the
+                    /* Searching, never show the empty state while the
                        manifest fetch or Fuse build is still running, or the
                        dropdown falsely claims there are no matches. */
                     <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Check,
   ChevronDown,
@@ -75,14 +75,22 @@ export function DownloadMenu({
     });
   }, []);
 
+  // Concurrent actions share these two feedback slots, so each flash cancels
+  // and replaces its own prior timer instead of two actions' timers racing to
+  // clear a confirmation or error that belongs to the other.
+  const doneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const flashDone = useCallback(() => {
     setDone(true);
-    setTimeout(() => setDone(false), 1600);
+    if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
+    doneTimerRef.current = setTimeout(() => setDone(false), 1600);
   }, []);
 
   const flashError = useCallback((message: string) => {
     setError(message);
-    setTimeout(() => setError(null), 4000);
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    errorTimerRef.current = setTimeout(() => setError(null), 4000);
   }, []);
 
   const handleSvgDownload = useCallback(async () => {

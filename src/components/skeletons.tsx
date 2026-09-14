@@ -25,7 +25,7 @@ function Pulse({ className }: { className?: string }) {
   );
 }
 
-/** Desktop header shell — mirrors the real header's card, height and logo. */
+/** Desktop header shell, mirrors the real header's card, height and logo. */
 export function HeaderSkeleton() {
   return (
     <div
@@ -42,7 +42,7 @@ export function HeaderSkeleton() {
   );
 }
 
-/** Mobile floating top-bar shell — mirrors the real mobile bar. */
+/** Mobile floating top-bar shell, mirrors the real mobile bar. */
 export function MobileHeaderSkeleton() {
   return (
     <div

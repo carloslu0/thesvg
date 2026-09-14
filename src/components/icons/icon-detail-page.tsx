@@ -33,7 +33,7 @@ import { withUtm } from "@/lib/external-link";
 import { IconFeedback } from "@/components/icons/detail/icon-feedback";
 
 // The preview already invites interaction with hover:scale-105, so a click
-// must do something — copy the SVG markup with a visible confirmation. Kept as
+// must do something: copy the SVG markup with a visible confirmation. Kept as
 // a leaf so its transient state does not re-render the whole detail page.
 function PreviewCopyButton({
   src,

@@ -24,7 +24,7 @@ interface UseIconSearchOptions {
 
 interface UseIconSearchResult {
   results: IconEntry[];
-  /** Full match count before `limit` is applied — drives "View all N". */
+  /** Full match count before `limit` is applied, drives "View all N". */
   total: number;
   isLoading: boolean;
   error: boolean;
@@ -58,7 +58,7 @@ export function useIconSearch(options: UseIconSearchOptions): UseIconSearchResul
   const [total, setTotal] = useState(0);
   // The query the current `results` belong to. Loading is derived from this
   // (see below) rather than an effect-set flag, so a searchable query reads
-  // as loading on the very first render — before the effect runs — instead
+  // as loading on the very first render, before the effect runs, instead
   // of flashing an empty state for one frame.
   const [resolvedQuery, setResolvedQuery] = useState("");
   const [error, setError] = useState(false);
@@ -73,6 +73,11 @@ export function useIconSearch(options: UseIconSearchOptions): UseIconSearchResul
   const trimmed = query.trim();
   const hasQuery = trimmed.length >= 2;
   const isLoading = hasQuery && resolvedQuery !== trimmed;
+  // Never expose results/total belonging to a stale query: without this, a
+  // click (or in the header, a keyboard select) during the debounce window
+  // could act on the previous query's results while isLoading is still true.
+  const effectiveResults = isLoading ? [] : results;
+  const effectiveTotal = isLoading ? 0 : total;
 
   useEffect(() => {
     if (!hasQuery) {
@@ -132,5 +137,5 @@ export function useIconSearch(options: UseIconSearchOptions): UseIconSearchResul
     return () => window.clearTimeout(id);
   }, [trimmed, hasQuery, recordSearch, source, recordDelayMs]);
 
-  return { results, total, isLoading, error };
+  return { results: effectiveResults, total: effectiveTotal, isLoading, error };
 }

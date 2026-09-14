@@ -49,7 +49,7 @@ describe("searchIcons", () => {
   });
 
   it("still returns partial matches when no icon matches all tokens", () => {
-    // "looker studio" — no icon holds both words, but the search must not
+    // "looker studio": no icon holds both words, but the search must not
     // report an empty result. It should surface the closest single-token
     // matches (Looker, the Studio icons) instead of nothing.
     const slugs = searchIcons(ICONS, "looker studio").map((i) => i.slug);
@@ -59,7 +59,7 @@ describe("searchIcons", () => {
   });
 
   it("matches a keyword that sits mid-string thanks to ignoreLocation", () => {
-    // "Data Studio" — the keyword "studio" is not near the start of the
+    // "Data Studio": the keyword "studio" is not near the start of the
     // title, so the default location-weighted scoring would drop it.
     const slugs = searchIcons(ICONS, "studio").map((i) => i.slug);
     expect(slugs).toContain("data-studio");
@@ -69,5 +69,13 @@ describe("searchIcons", () => {
   it("matches against aliases", () => {
     const slugs = searchIcons(ICONS, "source control").map((i) => i.slug);
     expect(slugs).toContain("github");
+  });
+
+  it("does not let a repeated token outrank an equally relevant single match", () => {
+    // A repeated word must not count twice toward an icon's match count,
+    // or it could out-rank (or exclude) an icon matching every unique token.
+    const repeated = searchIcons(ICONS, "looker looker studio").map((i) => i.slug);
+    const deduped = searchIcons(ICONS, "looker studio").map((i) => i.slug);
+    expect(repeated).toEqual(deduped);
   });
 });

@@ -138,17 +138,26 @@ export function HomeContent({ categoryCounts, count, recentIcons, collections, d
     [updateUrl, setSidebarOpen]
   );
 
+  // Navigate to the home grid while keeping every other URL-backed filter
+  // (search, sort, favorites, view) intact. Only the route-derived
+  // category/collection segment is dropped, since that's the one filter
+  // being cleared.
+  const navigateHomeKeepingParams = useCallback(() => {
+    const qs = searchParams.toString();
+    router.push(qs ? `/?${qs}` : "/");
+  }, [searchParams, router]);
+
   // Clear the active category. On /category/[slug] the category comes from the
   // route segment, not a query param, so editing params can't remove it - the
   // page must navigate to the home grid. When the category is a query param,
   // drop it in place and keep the current base path.
   const handleClearCategory = useCallback(() => {
     if (defaultCategory) {
-      router.push("/");
+      navigateHomeKeepingParams();
     } else {
       updateUrl({ category: null });
     }
-  }, [defaultCategory, router, updateUrl]);
+  }, [defaultCategory, navigateHomeKeepingParams, updateUrl]);
 
   const handleCollectionSelect = useCallback(
     (collection: Collection | null) => {
@@ -157,10 +166,10 @@ export function HomeContent({ categoryCounts, count, recentIcons, collections, d
       if (collection) {
         router.push(`/collection/${collection}`);
       } else {
-        router.push("/");
+        navigateHomeKeepingParams();
       }
     },
-    [router, setSidebarOpen]
+    [router, setSidebarOpen, navigateHomeKeepingParams]
   );
 
   const handleToggleFavorites = useCallback(() => {
