@@ -44,6 +44,26 @@ function isInAppBrowserBridgeError(result: CaptureResult): boolean {
   });
 }
 
+// The browser raises a "ResizeObserver loop" warning on window.onerror when it
+// cannot finish all resize callbacks in one frame. posthog-js captures it as a
+// synthetic, frameless exception even though nothing in the app threw and the
+// user flow keeps working. One marker covers both the legacy Chrome wording
+// ("loop limit exceeded") and the modern wording ("loop completed with
+// undelivered notifications").
+const RESIZE_OBSERVER_MARKER = "ResizeObserver loop";
+
+function isResizeObserverLoopError(result: CaptureResult): boolean {
+  if (result.event !== "$exception") return false;
+
+  const exceptions = result.properties?.["$exception_list"];
+  if (!Array.isArray(exceptions)) return false;
+
+  return exceptions.some((exception: { value?: unknown }) => {
+    const value = exception?.value;
+    return typeof value === "string" && value.includes(RESIZE_OBSERVER_MARKER);
+  });
+}
+
 if (posthogKey && !isLocalEnvironment) {
   posthog.init(posthogKey, {
     api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
@@ -52,6 +72,7 @@ if (posthogKey && !isLocalEnvironment) {
     capture_exceptions: !shouldIgnore,
     before_send: (result) => {
       if (result && isInAppBrowserBridgeError(result)) return null;
+      if (result && isResizeObserverLoopError(result)) return null;
       return result;
     },
     debug: process.env.NODE_ENV === "development",
