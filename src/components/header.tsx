@@ -27,6 +27,7 @@ import { useRecentsStore } from "@/lib/stores/recents-store";
 import type { Collection, IconEntry } from "@/lib/icons";
 import { COLLECTIONS_LIST } from "@/lib/collections-meta";
 import { loadIconsManifest } from "@/lib/icons-manifest";
+import { useIconSearch } from "@/lib/hooks/use-icon-search";
 import { cn } from "@/lib/utils";
 import { withUtm } from "@/lib/external-link";
 
@@ -51,21 +52,6 @@ function SubmitButton() {
       </span>
     </Link>
   );
-}
-
-/**
- * Fire-and-forget GA4 `search` event. Feeds GA4's built-in Search Terms
- * report so non-PostHog stakeholders can see top queries without setup.
- * Safe to call before gtag loads — silently no-ops when window.gtag is
- * undefined (e.g. SSR, ad-blocker, dev without GA configured).
- */
-function gaSearch(query: string) {
-  if (typeof window === "undefined") return;
-  const w = window as unknown as {
-    gtag?: (cmd: string, event: string, params: Record<string, unknown>) => void;
-  };
-  if (typeof w.gtag !== "function") return;
-  w.gtag("event", "search", { search_term: query });
 }
 
 const FIGMA_BADGE_EXPIRES_AT = Date.UTC(2026, 5, 3);
@@ -93,7 +79,6 @@ export function Header({ collectionCounts }: HeaderProps) {
   const setQuery = useSearchStore((s) => s.setQuery);
   const recentSearches = useRecentsStore((s) => s.searched);
   const recentViewed = useRecentsStore((s) => s.viewed);
-  const recordSearch = useRecentsStore((s) => s.recordSearch);
   const clearViewed = useRecentsStore((s) => s.clearViewed);
   const clearSearched = useRecentsStore((s) => s.clearSearched);
   const pathname = usePathname();
@@ -162,8 +147,12 @@ export function Header({ collectionCounts }: HeaderProps) {
 
   const isHome = pathname === "/";
 
-  const [suggestions, setSuggestions] = useState<IconEntry[]>([]);
-  const [totalMatches, setTotalMatches] = useState(0);
+  // Shared search hook (also used by the mobile sheet) so ranking, debounce,
+  // and analytics stay in one place. `isLoading` gates the empty state below
+  // so the dropdown never claims "No icons match" while a search is still in
+  // flight (manifest fetch + Fuse build).
+  const { results: suggestions, total: totalMatches, isLoading: searchLoading } =
+    useIconSearch({ query, source: "header", limit: 6 });
   const [recentViewedIcons, setRecentViewedIcons] = useState<IconEntry[]>([]);
   const hasQuery = query.trim().length >= 2;
   const showDropdown = focused;
@@ -186,26 +175,6 @@ export function Header({ collectionCounts }: HeaderProps) {
     const id = window.setTimeout(() => setDropdownMounted(false), 150);
     return () => window.clearTimeout(id);
   }, [showDropdown]);
-
-  // Persist real search intent to recents after the user pauses typing,
-  // and fire the same debounce point to PostHog + GA so analytics show
-  // what's actually searched (autocapture never records typed input).
-  // 700ms matches the landing page debounce — long enough to skip throwaway
-  // keystrokes, short enough to capture intent before navigation.
-  useEffect(() => {
-    const q = query.trim();
-    if (q.length < 2) return;
-    const id = window.setTimeout(() => {
-      recordSearch(q);
-      posthog.capture("icon_searched", {
-        query: q,
-        query_length: q.length,
-        source: "header",
-      });
-      gaSearch(q);
-    }, 700);
-    return () => window.clearTimeout(id);
-  }, [query, recordSearch]);
 
   // Resolve recently viewed slugs to IconEntry on first focus so we can
   // render thumbnails in the dropdown. Manifest is the same one loaded
@@ -231,39 +200,6 @@ export function Header({ collectionCounts }: HeaderProps) {
   }, [focused, recentViewed]);
 
   const hasRecents = recentViewedIcons.length > 0 || recentSearches.length > 0;
-
-  // Functional updates so empty-query renders bail on Object.is. Debounced
-  // (180ms) so fast typing doesn't re-run Fuse on every keystroke.
-  useEffect(() => {
-    if (!hasQuery) {
-      setSuggestions((prev) => (prev.length === 0 ? prev : []));
-      setTotalMatches((prev) => (prev === 0 ? prev : 0));
-      setSelectedIdx((prev) => (prev === -1 ? prev : -1));
-      return;
-    }
-    let active = true;
-    // Clear stale results immediately, not just after the debounce/async
-    // search resolves, so a result from the previous query can never be
-    // clicked or Entered into while it still visually looks current.
-    setSuggestions((prev) => (prev.length === 0 ? prev : []));
-    setTotalMatches((prev) => (prev === 0 ? prev : 0));
-    setSelectedIdx((prev) => (prev === -1 ? prev : -1));
-    const id = window.setTimeout(() => {
-      Promise.all([loadIconsManifest(), import("@/lib/search")]).then(([icons, { searchIcons }]) => {
-        if (!active) return;
-        const matches = searchIcons(icons, query);
-        setSuggestions(matches.slice(0, 6));
-        setTotalMatches(matches.length);
-        setSelectedIdx(-1);
-      }).catch(() => {
-        if (active) {
-          setSuggestions((prev) => (prev.length === 0 ? prev : []));
-          setTotalMatches((prev) => (prev === 0 ? prev : 0));
-        }
-      });
-    }, 180);
-    return () => { active = false; window.clearTimeout(id); };
-  }, [query, hasQuery]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -308,6 +244,9 @@ export function Header({ collectionCounts }: HeaderProps) {
 
   function handleSearchChange(value: string) {
     setQuery(value);
+    // Drop any keyboard highlight so a stale index can't point past the new
+    // result set once it resolves.
+    setSelectedIdx(-1);
     if (!isHome) {
       router.push(`/?q=${encodeURIComponent(value)}`);
     }
@@ -504,6 +443,16 @@ export function Header({ collectionCounts }: HeaderProps) {
                           <ArrowRight className="h-3 w-3" />
                         </Link>
                       )}
+                    </div>
+                  ) : searchLoading ? (
+                    /* Searching — never show the empty state while the
+                       manifest fetch or Fuse build is still running, or the
+                       dropdown falsely claims there are no matches. */
+                    <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
+                      <Search className="h-5 w-5 animate-pulse text-muted-foreground/30" />
+                      <p className="text-sm text-muted-foreground">
+                        Searching&hellip;
+                      </p>
                     </div>
                   ) : (
                     /* No matches */
