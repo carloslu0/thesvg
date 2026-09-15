@@ -40,6 +40,7 @@ import {
   clientKeyFromRequest,
   type RateLimitBinding,
 } from "./rate-limit";
+import { textResult, errorResult, iconNotFoundResult } from "./tool-helpers";
 
 interface Env {
   // Optional: Cloudflare's native Rate Limiting binding. See
@@ -101,9 +102,7 @@ function createServer(): McpServer {
 
       if (results.length === 0) {
         return {
-          content: [
-            { type: "text", text: `No icons found matching "${query}".` },
-          ],
+          ...textResult(`No icons found matching "${query}".`),
           structuredContent: { query, count: 0, icons: [] },
         };
       }
@@ -124,7 +123,7 @@ function createServer(): McpServer {
       ];
 
       return {
-        content: [{ type: "text", text: lines.join("\n") }],
+        ...textResult(lines.join("\n")),
         structuredContent: {
           query,
           count: results.length,
@@ -159,15 +158,7 @@ function createServer(): McpServer {
     async ({ slug, variant }) => {
       const icon = findIcon(slug);
       if (!icon) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Icon not found: "${slug}". Use search_icons to find the correct slug.`,
-            },
-          ],
-          isError: true,
-        };
+        return iconNotFoundResult(slug);
       }
 
       const resolvedVariant = variant ?? "default";
@@ -179,23 +170,14 @@ function createServer(): McpServer {
           signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
         });
         if (!res.ok) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Could not fetch SVG for "${slug}" variant "${resolvedVariant}" (${res.status}). Available variants: ${icon.variants.join(", ")}.`,
-              },
-            ],
-            isError: true,
-          };
+          return errorResult(
+            `Could not fetch SVG for "${slug}" variant "${resolvedVariant}" (${res.status}). Available variants: ${icon.variants.join(", ")}.`
+          );
         }
         svg = await res.text();
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return {
-          content: [{ type: "text", text: `Error fetching icon: ${message}` }],
-          isError: true,
-        };
+        return errorResult(`Error fetching icon: ${message}`);
       }
 
       const lines = [
@@ -216,7 +198,7 @@ function createServer(): McpServer {
         "```",
       ].filter((line): line is string => line !== null);
 
-      return { content: [{ type: "text", text: lines.join("\n") }] };
+      return textResult(lines.join("\n"));
     }
   );
 
@@ -238,15 +220,7 @@ function createServer(): McpServer {
     async ({ slug }) => {
       const icon = findIcon(slug);
       if (!icon) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Icon not found: "${slug}". Use search_icons to find the correct slug.`,
-            },
-          ],
-          isError: true,
-        };
+        return iconNotFoundResult(slug);
       }
 
       const lines = [
@@ -255,7 +229,7 @@ function createServer(): McpServer {
         ...icon.variants.map((v) => `- \`${v}\` -- ${buildIconUrl(slug, v)}`),
       ];
 
-      return { content: [{ type: "text", text: lines.join("\n") }] };
+      return textResult(lines.join("\n"));
     }
   );
 
@@ -284,53 +258,34 @@ function createServer(): McpServer {
     async ({ slug, variant }) => {
       const icon = findIcon(slug);
       if (!icon) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Icon not found: "${slug}". Use search_icons to find the correct slug.`,
-            },
-          ],
-          isError: true,
-        };
+        return iconNotFoundResult(slug);
       }
 
       const resolvedVariant = variant ?? "default";
       if (!icon.variants.includes(resolvedVariant)) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Variant "${resolvedVariant}" not available for "${slug}". Available variants: ${icon.variants.join(", ")}.`,
-            },
-          ],
-          isError: true,
-        };
+        return errorResult(
+          `Variant "${resolvedVariant}" not available for "${slug}". Available variants: ${icon.variants.join(", ")}.`
+        );
       }
 
       const url = buildIconUrl(slug, resolvedVariant);
 
-      return {
-        content: [
-          {
-            type: "text",
-            text: [
-              `**CDN URL** for \`${slug}\` (variant: ${resolvedVariant}):`,
-              "",
-              url,
-              "",
-              "Example usage:",
-              "```html",
-              `<img src="${url}" alt="${icon.name}" width="32" height="32" />`,
-              "```",
-              "",
-              "```markdown",
-              `![${icon.name}](${url})`,
-              "```",
-            ].join("\n"),
-          },
-        ],
-      };
+      return textResult(
+        [
+          `**CDN URL** for \`${slug}\` (variant: ${resolvedVariant}):`,
+          "",
+          url,
+          "",
+          "Example usage:",
+          "```html",
+          `<img src="${url}" alt="${icon.name}" width="32" height="32" />`,
+          "```",
+          "",
+          "```markdown",
+          `![${icon.name}](${url})`,
+          "```",
+        ].join("\n")
+      );
     }
   );
 
@@ -348,7 +303,7 @@ function createServer(): McpServer {
       const total = loadIcons().length;
 
       if (categories.length === 0) {
-        return { content: [{ type: "text", text: "No categories found." }] };
+        return textResult("No categories found.");
       }
 
       const lines = [
@@ -359,7 +314,7 @@ function createServer(): McpServer {
         ),
       ];
 
-      return { content: [{ type: "text", text: lines.join("\n") }] };
+      return textResult(lines.join("\n"));
     }
   );
 
