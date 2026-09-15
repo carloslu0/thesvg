@@ -4,7 +4,7 @@
 
 ## Overview
 
-theSVG (thesvg.org) is a free, open-source library of 7,412+ SVG icons across 7 collections: Brand Icons, AWS Architecture, Azure Services, Google Cloud, Kubernetes, Community, and Auth Badges. Every icon includes metadata (brand name, hex color, categories, license, website URL, brand guidelines) and up to 7 SVG variants per brand.
+theSVG (thesvg.org) is a free, open-source library of 7,412+ SVG icons across 7 collections: Brand Icons, AWS Architecture, Azure Services, Google Cloud, Kubernetes, Community, and Auth Badges. Every icon includes core metadata such as a name, hex color, categories, and license. Where present, icons also include a website URL, guideline links, and up to 7 SVG variants.
 
 ## Quick Start
 
@@ -52,14 +52,14 @@ curl "https://thesvg.org/icons/openai/default.svg"
 
 | Package | Description | Install |
 |---------|-------------|---------|
-| `thesvg` | 6,500+ brand SVG icons - tree-shakeable, typed, dual ESM/CJS. The one-stop brand icon library. | `npm i thesvg` |
-| `@thesvg/icons` | Tree-shakeable SVG icon components and raw SVG strings from thesvg.org - 6,500+ brand icons | `npm i @thesvg/icons` |
-| `@thesvg/react` | Typed React SVG components for all 6,500+ brand icons from thesvg.org | `npm i @thesvg/react` |
+| `thesvg` | 7,412+ icons - tree-shakeable, typed, dual ESM/CJS. The one-stop brand icon library. | `npm i thesvg` |
+| `@thesvg/icons` | Tree-shakeable SVG icon components and raw SVG strings from thesvg.org - 7,412+ icons | `npm i @thesvg/icons` |
+| `@thesvg/react` | Typed React SVG components for all 7,412+ icons from thesvg.org | `npm i @thesvg/react` |
 | `@thesvg/cli` | CLI tool to add SVG icons from thesvg.org to your project | `npx @thesvg/cli add {slug}` |
-| `@thesvg/mcp-server` | MCP server for searching and fetching 6,500+ brand SVGs from thesvg.org | `npx @thesvg/mcp-server` |
-| `@thesvg/react-native` | Typed React Native SVG components for all 6,500+ brand icons from thesvg.org | `npm i @thesvg/react-native` |
-| `@thesvg/vue` | Typed Vue 3 SVG components for all 4000+ brand icons from thesvg.org | `npm i @thesvg/vue` |
-| `@thesvg/svelte` | Typed Svelte SVG components for all 4000+ brand icons from thesvg.org | `npm i @thesvg/svelte` |
+| `@thesvg/mcp-server` | MCP server for searching and fetching 7,412+ icons from thesvg.org | `npx @thesvg/mcp-server` |
+| `@thesvg/react-native` | Typed React Native SVG components for all 7,412+ icons from thesvg.org | `npm i @thesvg/react-native` |
+| `@thesvg/vue` | Typed Vue 3 SVG components for all 7,412+ icons from thesvg.org | `npm i @thesvg/vue` |
+| `@thesvg/svelte` | Typed Svelte SVG components for all 7,412+ icons from thesvg.org | `npm i @thesvg/svelte` |
 
 ## Icon Data Schema
 
@@ -192,7 +192,7 @@ Accessibility, Advertising, Agency, AI, Analytics, AntV, App Services, Architect
 - 13,294+ total SVG variants
 - 1,125 icons with verified brand guidelines links
 - All icons have license metadata
-- Zero runtime dependencies (React is peer dep for @thesvg/react)
+- 6 of 8 packages ship with zero runtime dependencies (framework peers like React, Vue, and Svelte are not counted); the rest declare a small, explicit dependency list, see the Packages table
 
 ## License
 

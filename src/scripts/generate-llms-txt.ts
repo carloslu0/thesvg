@@ -32,6 +32,8 @@ interface IconEntry {
 interface PackageInfo {
   name: string;
   description: string;
+  /** Count of entries in this package's own `dependencies` field (not peerDependencies). */
+  dependencyCount: number;
 }
 
 // Preferred display order for packages. Anything discovered under
@@ -66,7 +68,11 @@ function getPackages(): PackageInfo[] {
     if (!existsSync(pkgPath)) continue;
     const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
     if (pkg.private) continue;
-    packages.push({ name: pkg.name, description: pkg.description || "" });
+    packages.push({
+      name: pkg.name,
+      description: pkg.description || "",
+      dependencyCount: Object.keys(pkg.dependencies || {}).length,
+    });
   }
 
   return packages.sort((a, b) => {
@@ -93,6 +99,29 @@ function joinWithAnd(items: string[]): string {
 function formatCategoryList(categories: string[], limit: number): string {
   const shown = categories.slice(0, limit);
   return categories.length > limit ? `${shown.join(", ")}, and more.` : `${shown.join(", ")}.`;
+}
+
+/**
+ * Package descriptions in packages/*\/package.json carry their own hand-written
+ * icon counts (e.g. "6,500+ brand icons", "4000+ brand icons") that drift from
+ * the live count just like the old hand-maintained llms files did. Swap any
+ * such count for the one this script just computed from icons.json, so the
+ * description never contradicts the rest of the document.
+ */
+function normalizeDescription(description: string, formattedIconCount: string): string {
+  return description.replace(
+    /[\d,]+\+\s*brand\s+(?:SVG\s+)?(?:icons?|SVGs?)/gi,
+    `${formattedIconCount}+ icons`,
+  );
+}
+
+/** Human-readable summary of how many packages ship with zero runtime dependencies. */
+function summarizeRuntimeDeps(packages: PackageInfo[]): string {
+  const zeroDepCount = packages.filter((pkg) => pkg.dependencyCount === 0).length;
+  if (zeroDepCount === packages.length) {
+    return `All ${packages.length} packages ship with zero runtime dependencies (framework peers like React, Vue, and Svelte are not counted)`;
+  }
+  return `${zeroDepCount} of ${packages.length} packages ship with zero runtime dependencies (framework peers like React, Vue, and Svelte are not counted); the rest declare a small, explicit dependency list, see the Packages table`;
 }
 
 function main() {
@@ -158,7 +187,9 @@ function buildLlmsTxt(data: {
 }): string {
   const { formattedIconCount, collectionCount, collectionSummary, packages, categories } = data;
 
-  const packageLines = packages.map((pkg) => `- \`${pkg.name}\` - ${pkg.description}`).join("\n");
+  const packageLines = packages
+    .map((pkg) => `- \`${pkg.name}\` - ${normalizeDescription(pkg.description, formattedIconCount)}`)
+    .join("\n");
   const categoryList = formatCategoryList(categories, 35);
 
   return `# theSVG
@@ -244,9 +275,13 @@ function buildLlmsFullTxt(data: {
   } = data;
 
   const packageRows = packages
-    .map((pkg) => `| \`${pkg.name}\` | ${pkg.description} | \`${installHint(pkg.name)}\` |`)
+    .map(
+      (pkg) =>
+        `| \`${pkg.name}\` | ${normalizeDescription(pkg.description, formattedIconCount)} | \`${installHint(pkg.name)}\` |`,
+    )
     .join("\n");
   const categoryList = formatCategoryList(categories, 50);
+  const runtimeDepsSummary = summarizeRuntimeDeps(packages);
 
   return `# theSVG - Full LLM Context
 
@@ -254,7 +289,7 @@ function buildLlmsFullTxt(data: {
 
 ## Overview
 
-theSVG (thesvg.org) is a free, open-source library of ${formattedIconCount}+ SVG icons across ${collectionCount} collections: ${collectionSummary}. Every icon includes metadata (brand name, hex color, categories, license, website URL, brand guidelines) and up to 7 SVG variants per brand.
+theSVG (thesvg.org) is a free, open-source library of ${formattedIconCount}+ SVG icons across ${collectionCount} collections: ${collectionSummary}. Every icon includes core metadata such as a name, hex color, categories, and license. Where present, icons also include a website URL, guideline links, and up to 7 SVG variants.
 
 ## Quick Start
 
@@ -435,7 +470,7 @@ ${categoryList}
 - ${formattedVariantCount}+ total SVG variants
 - ${guidelinesCount.toLocaleString("en-US")} icons with verified brand guidelines links
 - All icons have license metadata
-- Zero runtime dependencies (React is peer dep for @thesvg/react)
+- ${runtimeDepsSummary}
 
 ## License
 
