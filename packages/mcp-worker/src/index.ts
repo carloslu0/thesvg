@@ -22,13 +22,7 @@
 import { createMcpHandler } from "agents/mcp/server";
 import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
-import {
-  loadIcons,
-  searchIcons,
-  findIcon,
-  buildIconUrl,
-  listCategories,
-} from "./icons-data";
+import { loadIcons, searchIcons, buildIconUrl, listCategories } from "./icons-data";
 import {
   SEARCH_WIDGET_TEMPLATE_URI,
   widgetDescriptorMeta,
@@ -40,7 +34,8 @@ import {
   clientKeyFromRequest,
   type RateLimitBinding,
 } from "./rate-limit";
-import { textResult, errorResult, iconNotFoundResult } from "./tool-helpers";
+import { textResult, errorResult, findIconOrNotFound } from "./tool-helpers";
+import { slugAndVariantSchema } from "./tool-schemas";
 
 interface Env {
   // Optional: Cloudflare's native Rate Limiting binding. See
@@ -140,26 +135,14 @@ function createServer(): McpServer {
       title: "Get icon SVG",
       description:
         "Fetch the raw SVG content for a specific brand icon from thesvg.org. Returns SVG markup, metadata, and the CDN URL.",
-      inputSchema: z.object({
-        slug: z
-          .string()
-          .describe(
-            "Icon slug identifier (e.g. 'github', 'stripe', 'openai'). Use search_icons to find slugs."
-          ),
-        variant: z
-          .string()
-          .optional()
-          .default("default")
-          .describe(
-            "Icon variant to fetch: 'default', 'mono', 'light', 'dark', 'wordmark', 'color'. Defaults to 'default'. Use list_variants to see what a specific icon supports."
-          ),
-      }),
+      inputSchema: slugAndVariantSchema(
+        "Icon variant to fetch: 'default', 'mono', 'light', 'dark', 'wordmark', 'color'. Defaults to 'default'. Use list_variants to see what a specific icon supports."
+      ),
     },
     async ({ slug, variant }) => {
-      const icon = findIcon(slug);
-      if (!icon) {
-        return iconNotFoundResult(slug);
-      }
+      const found = findIconOrNotFound(slug);
+      if (!found.ok) return found.result;
+      const icon = found.icon;
 
       const resolvedVariant = variant ?? "default";
       const url = buildIconUrl(slug, resolvedVariant);
@@ -218,10 +201,9 @@ function createServer(): McpServer {
       }),
     },
     async ({ slug }) => {
-      const icon = findIcon(slug);
-      if (!icon) {
-        return iconNotFoundResult(slug);
-      }
+      const found = findIconOrNotFound(slug);
+      if (!found.ok) return found.result;
+      const icon = found.icon;
 
       const lines = [
         `**${icon.name}** (\`${icon.slug}\`) has ${icon.variants.length} variant${icon.variants.length === 1 ? "" : "s"}:`,
@@ -240,26 +222,14 @@ function createServer(): McpServer {
       title: "Get icon CDN URL",
       description:
         "Get a thesvg.org CDN URL for a brand icon without fetching the SVG content. Use this to embed icons in HTML, Markdown, Notion, Webflow, or any img tag. Cheaper than get_icon when you only need the URL.",
-      inputSchema: z.object({
-        slug: z
-          .string()
-          .describe(
-            "Icon slug identifier (e.g. 'github', 'stripe', 'openai'). Use search_icons to find slugs."
-          ),
-        variant: z
-          .string()
-          .optional()
-          .default("default")
-          .describe(
-            "Icon variant: 'default', 'mono', 'light', 'dark', 'wordmark', 'color'. Defaults to 'default'."
-          ),
-      }),
+      inputSchema: slugAndVariantSchema(
+        "Icon variant: 'default', 'mono', 'light', 'dark', 'wordmark', 'color'. Defaults to 'default'."
+      ),
     },
     async ({ slug, variant }) => {
-      const icon = findIcon(slug);
-      if (!icon) {
-        return iconNotFoundResult(slug);
-      }
+      const found = findIconOrNotFound(slug);
+      if (!found.ok) return found.result;
+      const icon = found.icon;
 
       const resolvedVariant = variant ?? "default";
       if (!icon.variants.includes(resolvedVariant)) {
